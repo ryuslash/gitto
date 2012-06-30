@@ -30,6 +30,7 @@
   (display "\
 gitto [options]
   -r, --register REPO  Register a new repository directory
+  -R, --remove REPO    Repmove a repository directory
   -v, --version        Display version
   -h, --help           Display this help
 "))
@@ -59,6 +60,15 @@ gitto [options]
         (save-repositories-list)
         (simple-format #t "Repository ~A registered." repository))
       (display "Repository already registered."))
+  (newline))
+
+(define (remove-repository repository)
+  (if (member repository repositories)
+      (begin
+        (set! repositories (delete repository repositories))
+        (save-repositories-list)
+        (simple-format #t "Repository ~A removed." repository))
+      (display "Not a registered repository."))
   (newline))
 
 (define (git-revs-to-push)
@@ -94,14 +104,18 @@ gitto [options]
   `((version  (single-char #\v) (value #f))
     (help     (single-char #\h) (value #f))
     (register (single-char #\r) (value #t)
+              (predicate ,git-dir?))
+    (remove   (single-char #\R) (value #t)
               (predicate ,git-dir?))))
 
 (define (main args)
   (let* ((options (getopt-long args option-spec))
          (help-wanted (option-ref options 'help #f))
          (version-wanted (option-ref options 'version #f))
-         (registration-needed (option-ref options 'register #f)))
+         (registration-needed (option-ref options 'register #f))
+         (removal (option-ref options 'remove #f)))
     (cond (version-wanted (version))
           (help-wanted (help))
           (registration-needed => register-repository)
+          (removal => remove-repository)
           (#t (list-repositories)))))
