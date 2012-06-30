@@ -23,12 +23,12 @@
 
 (define (version)
   "Display version information"
-  (display "gitter version 0.1\n"))
+  (display "gitto version 0.1\n"))
 
 (define (help)
   "Display some help."
   (display "\
-gitter [options]
+gitto [options]
   -r, --register REPO  Register a new repository directory
   -v, --version        Display version
   -h, --help           Display this help
