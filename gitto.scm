@@ -1,4 +1,4 @@
-#! /usr/guile-2.0/bin/guile \
+#! /usr/bin/guile \
 -e main -s
 !#
 (use-modules (ice-9 format)
