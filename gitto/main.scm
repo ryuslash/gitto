@@ -96,7 +96,7 @@ gitto [options]
               (let ((numup (git-revs-to-push))
                     (numdown (git-revs-to-pull))
                     (clean? (git-clean?)))
-                (format #t "~a: ~d to push, ~d to pull and is ~adirty.\n"
+                (format #t "~a:~15t~d to push, ~d to pull and is ~adirty.\n"
                         (basename repo) numup numdown
                         (if clean? "not " ""))))
             repositories))
