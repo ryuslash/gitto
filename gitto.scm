@@ -7,8 +7,11 @@
              (ice-9 rdelim))
 
 (define data-dir
-  (string-append (or (getenv "XDG_DATA_HOME") "~/.local/share")
-                 "/gitracker"))
+  (let ((xdg (getenv "XGD_DATA_HOME"))
+        (name "gitto"))
+    (if xdg
+        (string-append xdg "/" name)
+        (string-append (getenv "HOME") "/." name))))
 
 (define repositories-file
   (string-append data-dir "/repos.scm"))
