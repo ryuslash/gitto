@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export GUILE_LOAD_PATH="$(dirname $(realpath $0)):$GUILE_LOAD_PATH"
+export GUILE_LOAD_COMPILED_PATH="$(dirname $(realpath $0)):$GUILE_LOAD_PATH"
+exec src/gitto "$@"

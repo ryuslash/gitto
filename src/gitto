@@ -1,0 +1,4 @@
+#!/bin/sh
+
+BOOT="((@ (gitto main) main) (program-arguments))"
+exec guile $GUILE_FLAGS -c "$BOOT" "$0" "$@"

@@ -1,10 +1,9 @@
-#! /usr/bin/guile \
--e main -s
-!#
-(use-modules (ice-9 format)
-             (ice-9 getopt-long)
-             (ice-9 popen)
-             (ice-9 rdelim))
+(define-module (gitto main)
+  #:use-module (ice-9 format)
+  #:use-module (ice-9 getopt-long)
+  #:use-module (ice-9 popen)
+  #:use-module (ice-9 rdelim)
+  #:export (main))
 
 (define data-dir
   (let ((xdg (getenv "XGD_DATA_HOME"))
