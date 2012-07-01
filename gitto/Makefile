@@ -1,6 +1,8 @@
 DESTDIR ?= /usr/local
+SITEDIR = $(shell pkg-config guile-2.0 --variable=sitedir --define-variable=prefix=$(DESTDIR))
+COMPDIR = $(DESTDIR)/lib/guile/2.0/site-ccache
 
-objects = main.go main.scm
+objects = main.scm main.go
 install-objects = $(addprefix install-,$(objects))
 uninstall-objects = $(addprefix uninstall-,$(objects))
 
@@ -13,13 +15,13 @@ install: $(install-objects)
 uninstall: $(uninstall-objects)
 
 $(filter %.go,$(install-objects)): install-%:
-	install -Dm 644 $* $(DESTDIR)/lib/guile/2.0/ccache/gitto/$*
+	install -Dm 644 $* "$(COMPDIR)/gitto/$*"
 
 $(filter %.scm,$(install-objects)): install-%:
-	install -Dm 644 $* $(DESTDIR)/share/guile/2.0/gitto/$*
+	install -Dm 644 $* "$(SITEDIR)/gitto/$*"
 
 $(filter %.go,$(uninstall-objects)): uninstall-%:
-	rm -f $(DESTDIR)/lib/guile/2.0/ccache/gitto/$*
+	rm -f "$(COMPDIR)/gitto/$*"
 
 $(filter %.scm,$(uninstall-objects)): uninstall-%:
-	rm -f $(DESTDIR)/share/guile/2.0/gitto/$*
+	rm -f "$(SITEDIR}/gitto/$*"
