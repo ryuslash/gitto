@@ -80,28 +80,33 @@ gitto [options]
   (newline))
 
 (define (git-revs-to-push)
-  (let* ((pp (open-input-pipe "git log --pretty=oneline @{u}.. | wc -l"))
-         (num (string->number (read-line pp))))
-    (close-pipe pp)
+  (let* ((pipe (open-input-pipe
+                "git log --pretty=oneline @{u}.. 2>/dev/null | wc -l"))
+         (num (string->number (read-line pipe))))
+    (close-pipe pipe)
     num))
 
 (define (git-revs-to-pull)
-  (let* ((pp (open-input-pipe "git log --pretty=oneline ..@{u} | wc -l"))
-         (num (string->number (read-line pp))))
-    (close-pipe pp)
+  (let* ((pipe (open-input-pipe
+              "git log --pretty=oneline ..@{u} 2>/dev/null | wc -l"))
+         (num (string->number (read-line pipe))))
+    (close-pipe pipe)
     num))
 
 (define (git-clean?)
-  (let* ((pipe (open-input-pipe "git status -suno"))
+  (let* ((pipe (open-input-pipe "git status -suno 2>/dev/null"))
          (clean? (eof-object? (read-delimited "" pipe))))
     (close-pipe pipe)
     clean?))
 
 (define (git-last-update)
-  (let* ((pipe (open-input-pipe "git log -1 --format=%ar @{u}"))
+  (let* ((pipe (open-input-pipe
+                "git log -1 --format=%ar @{u} 2>/dev/null"))
          (relative-last-update (read-line pipe)))
     (close-pipe pipe)
-    relative-last-update))
+    (if (eof-object? relative-last-update)
+        "never"
+        relative-last-update)))
 
 (define (list-repositories)
   (for-each
