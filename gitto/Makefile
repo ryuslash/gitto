@@ -1,5 +1,6 @@
 DESTDIR ?= /usr/local
-SITEDIR = $(shell pkg-config guile-2.0 --variable=sitedir --define-variable=prefix=$(DESTDIR))
+SITEDIR = $(shell pkg-config guile-2.0 --variable=sitedir \
+	--define-variable=prefix=$(DESTDIR))
 COMPDIR = $(DESTDIR)/lib/guile/2.0/site-ccache
 
 objects = main.scm main.go
