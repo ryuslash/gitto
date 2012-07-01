@@ -51,6 +51,12 @@ gitto [options]
   (if (not (file-exists? data-dir))
       (mkdir data-dir))
 
+  ;; Sort first
+  (set! repositories
+        (sort repositories
+              (lambda (s1 s2)
+                (string<? (basename s1) (basename s2)))))
+
   (let ((port (open-output-file repositories-file)))
     (write repositories port)
     (close-port port)))
@@ -114,7 +120,7 @@ gitto [options]
   (for-each (lambda (repo)
               (display repo)
               (newline))
-            repositories))
+            (sort repositories string<?)))
 
 (define option-spec
   `((version      (single-char #\v))
