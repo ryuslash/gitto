@@ -33,6 +33,7 @@
 gitto [options]
   -r, --register REPO  Register a new repository directory
   -R, --remove REPO    Repmove a repository directory
+  -l, --repositories   List all registered repositories' locations
   -v, --version        Display version
   -h, --help           Display this help
 "))
@@ -101,22 +102,31 @@ gitto [options]
                         (if clean? "not " ""))))
             repositories))
 
+(define (list-repository-locations)
+  (for-each (lambda (repo)
+              (display repo)
+              (newline))
+            repositories))
+
 (define option-spec
   `((version  (single-char #\v) (value #f))
     (help     (single-char #\h) (value #f))
     (register (single-char #\r) (value #t)
               (predicate ,git-dir?))
     (remove   (single-char #\R) (value #t)
-              (predicate ,git-dir?))))
+              (predicate ,git-dir?))
+    (repositories (single-char #\l))))
 
 (define (main args)
   (let* ((options (getopt-long args option-spec))
          (help-wanted (option-ref options 'help #f))
          (version-wanted (option-ref options 'version #f))
          (registration-needed (option-ref options 'register #f))
-         (removal (option-ref options 'remove #f)))
+         (removal (option-ref options 'remove #f))
+         (list (option-ref options 'repositories #f)))
     (cond (version-wanted (version))
           (help-wanted (help))
           (registration-needed => register-repository)
           (removal => remove-repository)
+          (list (list-repository-locations))
           (#t (list-repositories)))))
