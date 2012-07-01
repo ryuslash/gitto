@@ -91,16 +91,23 @@ gitto [options]
     (close-pipe pipe)
     clean?))
 
+(define (git-last-update)
+  (let* ((pipe (open-input-pipe "git log -1 --format=%ar @{u}"))
+         (relative-last-update (read-line pipe)))
+    (close-pipe pipe)
+    relative-last-update))
+
 (define (list-repositories)
   (for-each
    (lambda (repo)
      (chdir repo)
      (let ((numup (git-revs-to-push))
            (numdown (git-revs-to-pull))
-           (clean? (git-clean?)))
-       (format #t "~a:~15t~d to push, ~d to pull and is ~adirty.\n"
-               (basename repo) numup numdown
-               (if clean? "not " ""))))
+           (clean? (git-clean?))
+           (lastupdate (git-last-update)))
+       (format #t
+        "~a:~15t~d to push, ~d to pull and is ~adirty. Last update: ~a\n"
+        (basename repo) numup numdown (if clean? "not " "") lastupdate)))
    repositories))
 
 (define (list-repository-locations)
