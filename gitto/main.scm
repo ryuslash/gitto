@@ -92,15 +92,16 @@ gitto [options]
     clean?))
 
 (define (list-repositories)
-  (for-each (lambda (repo)
-              (chdir repo)
-              (let ((numup (git-revs-to-push))
-                    (numdown (git-revs-to-pull))
-                    (clean? (git-clean?)))
-                (format #t "~a:~15t~d to push, ~d to pull and is ~adirty.\n"
-                        (basename repo) numup numdown
-                        (if clean? "not " ""))))
-            repositories))
+  (for-each
+   (lambda (repo)
+     (chdir repo)
+     (let ((numup (git-revs-to-push))
+           (numdown (git-revs-to-pull))
+           (clean? (git-clean?)))
+       (format #t "~a:~15t~d to push, ~d to pull and is ~adirty.\n"
+               (basename repo) numup numdown
+               (if clean? "not " ""))))
+   repositories))
 
 (define (list-repository-locations)
   (for-each (lambda (repo)
@@ -109,24 +110,22 @@ gitto [options]
             repositories))
 
 (define option-spec
-  `((version  (single-char #\v) (value #f))
-    (help     (single-char #\h) (value #f))
-    (register (single-char #\r) (value #t)
-              (predicate ,git-dir?))
-    (remove   (single-char #\R) (value #t)
-              (predicate ,git-dir?))
+  `((version      (single-char #\v))
+    (help         (single-char #\h))
+    (register     (single-char #\r) (value #t) (predicate ,git-dir?))
+    (remove       (single-char #\R) (value #t) (predicate ,git-dir?))
     (repositories (single-char #\l))))
 
 (define (main args)
   (let* ((options (getopt-long args option-spec))
-         (help-wanted (option-ref options 'help #f))
-         (version-wanted (option-ref options 'version #f))
+         (help-wanted         (option-ref options 'help #f))
+         (version-wanted      (option-ref options 'version #f))
          (registration-needed (option-ref options 'register #f))
-         (removal (option-ref options 'remove #f))
-         (list (option-ref options 'repositories #f)))
-    (cond (version-wanted (version))
-          (help-wanted (help))
+         (removal             (option-ref options 'remove #f))
+         (list                (option-ref options 'repositories #f)))
+    (cond (version-wanted         (version))
+          (help-wanted            (help))
           (registration-needed => register-repository)
-          (removal => remove-repository)
-          (list (list-repository-locations))
-          (#t (list-repositories)))))
+          (removal             => remove-repository)
+          (list                   (list-repository-locations))
+          (#t                     (list-repositories)))))
