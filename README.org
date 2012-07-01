@@ -1,8 +1,0 @@
-* Gitto
-
-  For lack of a better title.
-
-  My simple utility to keep track of all the git repositories I have
-  on my computer(s). Also an experiment in writing scheme.
-
-  Written for ~guile~ 2.0.x
