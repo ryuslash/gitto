@@ -15,7 +15,7 @@ $(filter %.go,$(objects)): %.go: %.scm
 install: $(install-objects)
 uninstall: $(uninstall-objects)
 
-$(filter %.go,$(install-objects)): install-%:
+$(filter %.go,$(install-objects)): install-%: $(filter %.go,$(objects))
 	install -Dm 644 $* "$(COMPDIR)/gitto/$*"
 
 $(filter %.scm,$(install-objects)): install-%:
