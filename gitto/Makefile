@@ -8,7 +8,7 @@ install-objects = $(addprefix install-,$(objects))
 uninstall-objects = $(addprefix uninstall-,$(objects))
 
 $(filter %.go,$(objects)): %.go: %.scm
-	guile-tools compile -o $@ $^
+	guild compile -o $@ $^
 
 .PHONY: install $(install-objects) uninstall $(uninstall-objects)
 
