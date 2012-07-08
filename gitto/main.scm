@@ -42,7 +42,7 @@
       '()))
 
 (define (version)
-  "Display version information"
+  "Display version information."
   (display "gitto 0.1") (newline)
   (display "Copyright (C) 2012 Tom Willemsen") (newline)
   (display "This program comes with ABSOLUTELY NO WARRANTY.") (newline)
@@ -62,7 +62,7 @@ gitto [options]
 "))
 
 (define (git-dir? dir)
-  "Check whether or not DIR/.git exists"
+  "Check whether or not DIR/.git exists."
   (let ((dir (string-append dir "/.git")))
     (if (file-exists? dir)
         (let ((dirstat (stat dir)))
@@ -85,6 +85,7 @@ gitto [options]
     (close-port port)))
 
 (define (register-repository repository)
+  "Register REPOSITORY in the repository list."
   (if (not (member repository repositories))
       (begin
         (set! repositories (append `(,repository) repositories))
@@ -94,6 +95,7 @@ gitto [options]
   (newline))
 
 (define (remove-repository repository)
+  "Remove/unregister REPOSITORY from the repository list."
   (if (member repository repositories)
       (begin
         (set! repositories (delete repository repositories))
@@ -103,6 +105,7 @@ gitto [options]
   (newline))
 
 (define (git-revs-to-push)
+  "Check how many commits should be pushed upstream."
   (let* ((pipe (open-input-pipe
                 "git log --pretty=oneline @{u}.. 2>/dev/null | wc -l"))
          (num (string->number (read-line pipe))))
@@ -110,6 +113,7 @@ gitto [options]
     num))
 
 (define (git-revs-to-pull)
+  "Check how many commits should be pulled/merged from upstream."
   (let* ((pipe (open-input-pipe
               "git log --pretty=oneline ..@{u} 2>/dev/null | wc -l"))
          (num (string->number (read-line pipe))))
@@ -117,12 +121,15 @@ gitto [options]
     num))
 
 (define (git-clean?)
+  "Check whether a repository is clean, meaning there are no changes
+to the tracked files. Utracked files will not register."
   (let* ((pipe (open-input-pipe "git status -suno 2>/dev/null"))
          (clean? (eof-object? (read-delimited "" pipe))))
     (close-pipe pipe)
     clean?))
 
 (define (git-last-update)
+  "Check when the last update upstream was."
   (let* ((pipe (open-input-pipe
                 "git log -1 --format=%ar @{u} 2>/dev/null"))
          (relative-last-update (read-line pipe)))
@@ -132,6 +139,7 @@ gitto [options]
         relative-last-update)))
 
 (define (list-repositories)
+  "List information about every repository."
   (for-each
    (lambda (repo)
      (chdir repo)
@@ -145,6 +153,7 @@ gitto [options]
    repositories))
 
 (define (list-repository-locations)
+  "List the registered locations of repositories."
   (for-each (lambda (repo)
               (display repo)
               (newline))
@@ -158,6 +167,7 @@ gitto [options]
     (repositories (single-char #\l))))
 
 (define (main args)
+  "Parse the command line options and run the appropriate functions."
   (let* ((options (getopt-long args option-spec))
          (help-wanted         (option-ref options 'help #f))
          (version-wanted      (option-ref options 'version #f))
