@@ -21,6 +21,7 @@
   #:use-module (ice-9 getopt-long)
   #:use-module (ice-9 popen)
   #:use-module (ice-9 rdelim)
+  #:use-module (gitto path)
   #:export (main))
 
 (define data-dir
@@ -86,6 +87,7 @@ gitto [options]
 
 (define (register-repository repository)
   "Register REPOSITORY in the repository list."
+  (set! repository (realpath repository))
   (if (not (member repository repositories))
       (begin
         (set! repositories (append `(,repository) repositories))
@@ -96,6 +98,7 @@ gitto [options]
 
 (define (remove-repository repository)
   "Remove/unregister REPOSITORY from the repository list."
+  (set! repository (realpath repository))
   (if (member repository repositories)
       (begin
         (set! repositories (delete repository repositories))

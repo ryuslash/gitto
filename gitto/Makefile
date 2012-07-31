@@ -3,14 +3,16 @@ SITEDIR = $(shell pkg-config guile-2.0 --variable=sitedir \
 	--define-variable=prefix=$(DESTDIR))
 COMPDIR = $(DESTDIR)/lib/guile/2.0/site-ccache
 
-objects = main.scm main.go
+objects = main.scm main.go path.scm path.go
 install-objects = $(addprefix install-,$(objects))
 uninstall-objects = $(addprefix uninstall-,$(objects))
 
-$(filter %.go,$(objects)): %.go: %.scm
-	guild compile -o $@ $^
+.PHONY: all install $(install-objects) uninstall $(uninstall-objects)
 
-.PHONY: install $(install-objects) uninstall $(uninstall-objects)
+all: $(filter %.go,$(objects))
+
+$(filter %.go,$(objects)): %.go: %.scm
+	../env guild compile -o $@ $^
 
 install: $(install-objects)
 uninstall: $(uninstall-objects)
