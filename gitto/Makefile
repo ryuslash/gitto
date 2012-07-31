@@ -25,4 +25,4 @@ $(filter %.go,$(uninstall-objects)): uninstall-%:
 	rm -f "$(COMPDIR)/gitto/$*"
 
 $(filter %.scm,$(uninstall-objects)): uninstall-%:
-	rm -f "$(SITEDIR}/gitto/$*"
+	rm -f "$(SITEDIR)/gitto/$*"
