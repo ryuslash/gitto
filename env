@@ -1,0 +1,7 @@
+#!/bin/sh
+
+export GUILE_LOAD_PATH="$(dirname $(realpath $0)):$GUILE_LOAD_PATH"
+export GUILE_LOAD_COMPILED_PATH="$(dirname $(realpath $0)):$GUILE_LOAD_COMPILED_PATH"
+export LD_LIBRARY_PATH="$(dirname $(realpath $0))/src:$LD_LIBRARY_PATH"
+
+exec "$@"
