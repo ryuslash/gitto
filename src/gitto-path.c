@@ -20,14 +20,15 @@
 #include <stdlib.h>
 #include <libguile.h>
 
-SCM
-realpath_wrapper(SCM str)
+SCM_DEFINE(realpath_wrapper, "realpath", 1, 0, 0,
+           (SCM path),
+           "Transform PATH into an absolute path.")
 {
-    char *path = scm_to_locale_string(str);
-    char *resolved_path = realpath(path, NULL);
+    char *relative_path = scm_to_locale_string(path);
+    char *resolved_path = realpath(relative_path, NULL);
     SCM scm_resolved_path = scm_from_locale_string(resolved_path);
 
-    free(path);
+    free(relative_path);
     free(resolved_path);
 
     return scm_resolved_path;
@@ -36,5 +37,5 @@ realpath_wrapper(SCM str)
 void
 init_gitto()
 {
-    scm_c_define_gsubr("realpath", 1, 0, 0, realpath_wrapper);
+#include "gitto-path.x"
 }

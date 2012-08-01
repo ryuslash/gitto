@@ -8,6 +8,10 @@ all: libguile-gitto-path.so
 
 .PHONY: install uninstall
 
+%.x: %.c
+	guile-snarf -o $@ $< $(CFLAGS)
+
+gitto-path.o: gitto-path.x
 libguile-gitto-path.so: gitto-path.o
 	$(CC) $(CFLAGS) -shared -o libguile-gitto-path.so $^
 
