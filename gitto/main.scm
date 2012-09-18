@@ -70,6 +70,11 @@ gitto [options]
           (eq? (stat:type dirstat) 'directory))
         #f)))
 
+(define (known? repo)
+  "Do we know REPO?"
+  (or (member repo repositories)
+      (member (realpath repo) repositories)))
+
 (define (save-repositories-list)
   "Save the list of repositories."
   (if (not (file-exists? data-dir))
@@ -88,7 +93,7 @@ gitto [options]
 (define (register-repository repository)
   "Register REPOSITORY in the repository list."
   (set! repository (realpath repository))
-  (if (not (member repository repositories))
+  (if (not (known? repository))
       (begin
         (set! repositories (append `(,repository) repositories))
         (save-repositories-list)
@@ -101,7 +106,7 @@ gitto [options]
   (unless (member repository repositories)
     (set! repository (realpath repository)))
 
-  (if (member repository repositories)
+  (if (known? repository)
       (begin
         (set! repositories (delete repository repositories))
         (save-repositories-list)
@@ -172,7 +177,7 @@ to the tracked files. Utracked files will not register."
   `((version      (single-char #\v))
     (help         (single-char #\h))
     (register     (single-char #\r) (value #t) (predicate ,git-dir?))
-    (remove       (single-char #\R) (value #t))
+    (remove       (single-char #\R) (value #t) (predicate ,known?))
     (repositories (single-char #\l))))
 
 (define (main args)
