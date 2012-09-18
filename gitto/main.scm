@@ -145,14 +145,18 @@ to the tracked files. Utracked files will not register."
   "List information about every repository."
   (for-each
    (lambda (repo)
-     (chdir repo)
-     (let ((numup (git-revs-to-push))
-           (numdown (git-revs-to-pull))
-           (clean? (git-clean?))
-           (lastupdate (git-last-update)))
-       (format #t
-        "~a:~15t~d to push, ~d to pull and is ~adirty. Last update: ~a\n"
-        (basename repo) numup numdown (if clean? "not " "") lastupdate)))
+     (if (file-exists? repo)
+         (begin
+           (chdir repo)
+           (let ((numup (git-revs-to-push))
+                 (numdown (git-revs-to-pull))
+                 (clean? (git-clean?))
+                 (lastupdate (git-last-update)))
+             (format
+              #t "~a:~15t~d to push, ~d to pull and is ~adirty. Last update: ~a\n"
+              (basename repo) numup numdown (if clean? "not " "")
+              lastupdate)))
+         (format #t "~a:~15tnot found at ~s\n" (basename repo) repo)))
    repositories))
 
 (define (list-repository-locations)
