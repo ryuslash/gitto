@@ -98,7 +98,9 @@ gitto [options]
 
 (define (remove-repository repository)
   "Remove/unregister REPOSITORY from the repository list."
-  (set! repository (realpath repository))
+  (unless (member repository repositories)
+    (set! repository (realpath repository)))
+
   (if (member repository repositories)
       (begin
         (set! repositories (delete repository repositories))
@@ -170,7 +172,7 @@ to the tracked files. Utracked files will not register."
   `((version      (single-char #\v))
     (help         (single-char #\h))
     (register     (single-char #\r) (value #t) (predicate ,git-dir?))
-    (remove       (single-char #\R) (value #t) (predicate ,git-dir?))
+    (remove       (single-char #\R) (value #t))
     (repositories (single-char #\l))))
 
 (define (main args)
