@@ -19,15 +19,21 @@
 
 #include <stdlib.h>
 #include <libguile.h>
+#include <limits.h>
 
 SCM_DEFINE(realpath_wrapper, "realpath", 1, 0, 0,
            (SCM path),
            "Transform PATH into an absolute path.")
 {
     char *relative_path = scm_to_locale_string(path);
-    char *resolved_path = realpath(relative_path, NULL);
     SCM scm_resolved_path = SCM_BOOL_F;
+#ifdef PATH_MAX
+    char *resolved_path = calloc(sizeof(char), PATH_MAX + 1);
+#else
+    char *resolved_path = NULL;
+#endif
 
+    resolved_path = realpath(relative_path, resolved_path);
     if (resolved_path)
         scm_resolved_path = scm_from_locale_string(resolved_path);
 
