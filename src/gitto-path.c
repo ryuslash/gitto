@@ -26,7 +26,10 @@ SCM_DEFINE(realpath_wrapper, "realpath", 1, 0, 0,
 {
     char *relative_path = scm_to_locale_string(path);
     char *resolved_path = realpath(relative_path, NULL);
-    SCM scm_resolved_path = scm_from_locale_string(resolved_path);
+    SCM scm_resolved_path = SCM_BOOL_F;
+
+    if (resolved_path)
+        scm_resolved_path = scm_from_locale_string(resolved_path);
 
     free(relative_path);
     free(resolved_path);
