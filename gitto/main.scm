@@ -173,12 +173,18 @@ to the tracked files. Utracked files will not register."
               (newline))
             (sort repositories string<?)))
 
+(define (purge)
+  "Purge all items from the list that can no longer be found."
+  (set! repositories  (filter file-exists? repositories))
+  (save-repositories-list))
+
 (define option-spec
   `((version      (single-char #\v))
     (help         (single-char #\h))
     (register     (single-char #\r) (value #t) (predicate ,git-dir?))
     (remove       (single-char #\R) (value #t) (predicate ,known?))
-    (repositories (single-char #\l))))
+    (repositories (single-char #\l))
+    (purge        (single-char #\p))))
 
 (define (main args)
   "Parse the command line options and run the appropriate functions."
@@ -187,10 +193,12 @@ to the tracked files. Utracked files will not register."
          (version-wanted      (option-ref options 'version #f))
          (registration-needed (option-ref options 'register #f))
          (removal             (option-ref options 'remove #f))
-         (list                (option-ref options 'repositories #f)))
+         (list                (option-ref options 'repositories #f))
+         (purge?              (option-ref options 'purge #f)))
     (cond (version-wanted         (version))
           (help-wanted            (help))
           (registration-needed => register-repository)
           (removal             => remove-repository)
           (list                   (list-repository-locations))
+          (purge?                 (purge))
           (#t                     (list-repositories)))))
