@@ -92,7 +92,8 @@ gitto [options]
 
 (define (repository-registered? repository)
   "Check to see if REPOSITORY has been registered."
-  (format #t "Repository is~a registered~%" (if (known? repository) "" " not")))
+  (format #t "Repository is~a registered~%"
+          (if (known? repository) "" " not")))
 
 (define (register-repository repository)
   "Register REPOSITORY in the repository list."
