@@ -90,6 +90,10 @@ gitto [options]
     (write repositories port)
     (close-port port)))
 
+(define (repository-registered? repository)
+  "Check to see if REPOSITORY has been registered."
+  (format #t "Repository is~a registered~%" (if (known? repository) "" " not")))
+
 (define (register-repository repository)
   "Register REPOSITORY in the repository list."
   (set! repository (realpath repository))
@@ -184,7 +188,8 @@ to the tracked files. Utracked files will not register."
     (register     (single-char #\r) (value #t) (predicate ,git-dir?))
     (remove       (single-char #\R) (value #t) (predicate ,known?))
     (repositories (single-char #\l))
-    (purge        (single-char #\p))))
+    (purge        (single-char #\p))
+    (check        (single-char #\c) (value #t))))
 
 (define (main args)
   "Parse the command line options and run the appropriate functions."
@@ -194,11 +199,13 @@ to the tracked files. Utracked files will not register."
          (registration-needed? (option-ref options 'register #f))
          (removal?             (option-ref options 'remove #f))
          (list?                (option-ref options 'repositories #f))
-         (purge?               (option-ref options 'purge #f)))
+         (purge?               (option-ref options 'purge #f))
+         (check?               (option-ref options 'check #f)))
     (cond (version-wanted?         (version))
           (help-wanted?            (help))
           (registration-needed? => register-repository)
           (removal?             => remove-repository)
           (list?                   (list-repository-locations))
           (purge?                  (purge))
+          (check?               => repository-registered?)
           (#t                      (list-repositories)))))
