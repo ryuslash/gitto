@@ -23,6 +23,11 @@
 
 ;; Small interface between gitto and emacs.
 
+;; Right now it only offers the `gitto-register' command which lets
+;; you register repositories from within emacs.  When called
+;; interactively this command will try to register the git directory
+;; of the file of the current buffer.
+
 ;;; Code:
 
 (defgroup gitto nil
