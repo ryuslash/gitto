@@ -21,10 +21,10 @@
 
 ;;; Commentary:
 
-;; Small interface between gitto and emacs.
+;; Small interface between gitto and Emacs.
 
 ;; Right now it only offers the `gitto-register' command which lets
-;; you register repositories from within emacs.  When called
+;; you register repositories from within Emacs.  When called
 ;; interactively this command will try to register the git directory
 ;; of the file of the current buffer.
 
@@ -51,7 +51,7 @@
   "Register DIR with gitto."
   (interactive (list (locate-dominating-file (buffer-file-name) ".git")))
   (unless dir
-    (error "Not a git repository."))
+    (error "Not a git repository"))
 
   (shell-command (concat gitto-program " -r " dir)))
 
@@ -60,7 +60,7 @@
   "Unregister DIR with gitto."
   (interactive (list (locate-dominating-file (buffer-file-name) ".git")))
   (unless (and dir (gitto-registered-p dir))
-    (error "Not a registered git repository."))
+    (error "Not a registered git repository"))
 
   (shell-command (concat gitto-program " -R " dir)))
 
