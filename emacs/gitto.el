@@ -40,12 +40,29 @@
   :type 'string)
 
 ;;;###autoload
+(defun gitto-registered-p (dir)
+  "Check if DIR is a registered repository."
+  (not (string-match-p "not registered"
+                       (shell-command-to-string
+                        (concat gitto-program " -c " dir)))))
+
+;;;###autoload
 (defun gitto-register (dir)
+  "Register DIR with gitto."
   (interactive (list (locate-dominating-file (buffer-file-name) ".git")))
   (unless dir
     (error "Not a git repository."))
 
   (shell-command (concat gitto-program " -r " dir)))
+
+;;;###autoload
+(defun gitto-unregister (dir)
+  "Unregister DIR with gitto."
+  (interactive (list (locate-dominating-file (buffer-file-name) ".git")))
+  (unless (and dir (gitto-registered-p dir))
+    (error "Not a registered git repository."))
+
+  (shell-command (concat gitto-program " -R " dir)))
 
 (provide 'gitto)
 ;;; gitto.el ends here
