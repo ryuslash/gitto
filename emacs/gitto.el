@@ -4,7 +4,7 @@
 
 ;; Author: Tom Willemsen <thomas@aethon.nl>
 ;; Keywords: convenience
-;; Package-Version: 0.1.0
+;; Package-Version: 0.2.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
