@@ -44,7 +44,7 @@
 
 (define (version)
   "Display version information."
-  (display "gitto 0.1") (newline)
+  (display "gitto 0.1.0") (newline)
   (display "Copyright (C) 2012 Tom Willemsen") (newline)
   (display "This program comes with ABSOLUTELY NO WARRANTY.") (newline)
   (display "You may redistribute copies of this program") (newline)

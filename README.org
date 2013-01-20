@@ -1,0 +1,87 @@
+* Gitto
+
+  For lack of a better title.
+
+  My simple utility to keep track of all the git repositories I have
+  on my computer(s). Also an experiment in writing scheme.
+
+  Written for [[http://gnu.org/software/guile][GNU Guile]] 2.0.x
+
+** Installation
+
+   Installing ~gitto~ is not really necessary, but it *is* more
+   convenient. In order to install it just run:
+
+   #+BEGIN_EXAMPLE
+     make install
+   #+END_EXAMPLE
+
+   This will install ~gitto~ to ~/usr/local/~, if you would like it
+   somewhere else you could use the ~DESTDIR~ variable:
+
+   #+BEGIN_EXAMPLE
+     make install DESTDIR=/some/other/place
+   #+END_EXAMPLE
+
+   This will install ~gitto~ to ~/some/other/place/~.
+
+** Removal
+
+   If you're fed up with ~gitto~ and want it gone, and I do mean *now*,
+   you can run:
+
+   #+BEGIN_EXAMPLE
+     make uninstall
+   #+END_EXAMPLE
+
+   This will remove any ~gitto~ installed files from ~/usr/local/~, if you
+   used the ~DESTDIR~ variable during installation, you should give it
+   the same value here, like:
+
+   #+BEGIN_EXAMPLE
+     make uninstall DESTDIR=/some/other/place
+   #+END_EXAMPLE
+
+   This will remove any ~gitto~ installed files from ~/some/other/place/~.
+
+** Usage
+
+   Usage is, hopefully, simple, first you have to register some repos:
+
+   #+BEGIN_EXAMPLE
+     $ gitto -r ~/projects/project1
+     $ gitto -r ~/projects/project2
+     $ gitto -r ~/projects/project3
+   #+END_EXAMPLE
+
+   Then you can call ~gitto~ without any argument to see a list of your
+   repos and their statuses:
+
+   #+BEGIN_EXAMPLE
+     $ gitto
+     project1:      0 to push, 0 to pull and is dirty
+     project2:      5 to push, 2 to pull and is not dirty
+     project3:      0 to push, 1 to pull and is not dirty
+   #+END_EXAMPLE
+
+   If you're done with one of your projects and no longer wish to
+   track their status you can unregister them:
+
+   #+BEGIN_EXAMPLE
+     $ gitto -R ~/projects/project1
+   #+END_EXAMPLE
+
+   If you require further assistance:
+
+   #+BEGIN_EXAMPLE
+     $ gitto -h
+   #+END_EXAMPLE
+
+*** run-gitto
+
+    As I mentioned, it is not completely necessary to install gitto, I
+    have added a utility to run it straight from je project directory,
+    although mostly for testing purposes.
+
+    Using ~run-gitto~ works exactly the same as using ~gitto~ when it is
+    installed.
