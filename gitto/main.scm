@@ -56,8 +56,9 @@
   (display "\
 gitto [options]
   -r, --register REPO  Register a new repository directory
-  -R, --remove REPO    Repmove a repository directory
+  -R, --remove REPO    Remove a repository directory
   -l, --repositories   List all registered repositories' locations
+  -p, --purge          Remove all repositories that don't exist
   -v, --version        Display version
   -h, --help           Display this help
 "))
