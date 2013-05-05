@@ -18,12 +18,35 @@
 ;; along with gitto.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gitto main)
+  #:use-module (gitto path)
   #:use-module (ice-9 format)
   #:use-module (ice-9 getopt-long)
   #:use-module (ice-9 popen)
   #:use-module (ice-9 rdelim)
-  #:use-module (gitto path)
+  #:use-module (oop goops)
+  #:use-module (srfi srfi-1)
   #:export (main))
+
+(define-generic same-repository?)
+
+(define-class <repository> ()
+  (name #:accessor repo-name)
+  (location #:init-keyword #:location #:accessor repo-location)
+  (state #:accessor repo-state)
+  (pushable #:accessor repo-pushable)
+  (pullable #:accessor repo-pullable)
+  (updated #:accessor repo-updated))
+
+(define-method (initialize (repo <repository>) args)
+  (let ((cwd (getcwd)))
+    (chdir (car args))
+    (slot-set! repo 'name (basename (car args)))
+    (slot-set! repo 'location (car args))
+    (slot-set! repo 'state (git-clean?))
+    (slot-set! repo 'pushable (git-revs-to-push))
+    (slot-set! repo 'pullable (git-revs-to-pull))
+    (slot-set! repo 'updated (git-last-update))
+    (chdir cwd)))
 
 (define (storage-dir xdg-env fallback)
   (let ((xdg (getenv xdg-env)))
@@ -64,10 +87,18 @@ gitto [options]
           (eq? (stat:type dirstat) 'directory))
         #f)))
 
+(define-method (same-repository? (x <repository>) (y <repository>))
+  (string= (repo-location x) (repo-location y)))
+(define-method (same-repository? (x <string>) (y <repository>))
+  (string= x (repo-location y)))
+(define-method (same-repository? (x <repository>) (y <string>))
+  (string= (repo-location x) y))
+
 (define (known? repo)
   "Do we know REPO?"
-  (or (member repo repositories)
-      (member (realpath repo) repositories)))
+  (or (member repo repositories same-repository?)
+      (member (realpath (repo-location repo))
+              repositories same-repository?)))
 
 (define (save-repositories-list)
   "Save the list of repositories."
@@ -79,10 +110,11 @@ gitto [options]
   (set! repositories
         (sort repositories
               (lambda (s1 s2)
-                (string<? (basename s1) (basename s2)))))
+                (string<? (repo-name s1) (repo-name s2)))))
 
-  (let ((port (open-output-file repositories-file)))
-    (write repositories port)
+  (let ((port (open-output-file repositories-file))
+        (repos (map repo-location repositories)))
+    (write repos port)
     (close-port port)))
 
 (define (repository-registered? repository)
@@ -92,23 +124,25 @@ gitto [options]
 
 (define (register-repository repository)
   "Register REPOSITORY in the repository list."
-  (set! repository (realpath repository))
+  (set! repository (make <repository> (realpath repository)))
   (if (not (known? repository))
       (begin
         (set! repositories (append `(,repository) repositories))
         (save-repositories-list)
-        (simple-format #t "Repository ~A registered." repository))
+        (simple-format #t "Repository ~A registered."
+                       (repository-name repository)))
       (display "Repository already registered."))
   (newline))
 
 (define (remove-repository repository)
   "Remove/unregister REPOSITORY from the repository list."
-  (unless (member repository repositories)
+  (unless (member repository repositories same-repository?)
     (set! repository (realpath repository)))
 
   (if (known? repository)
       (begin
-        (set! repositories (delete repository repositories))
+        (set! repositories
+              (delete repository repositories same-repository?))
         (save-repositories-list)
         (simple-format #t "Repository ~A removed." repository))
       (display "Not a registered repository."))
@@ -157,24 +191,27 @@ to the tracked files. Utracked files will not register."
   "List information about every repository."
   (for-each
    (lambda (repo)
-     (if (file-exists? repo)
+     (if (file-exists? (repo-location repo))
          (begin
-           (chdir repo)
-           (let ((numup (git-revs-to-push))
-                 (numdown (git-revs-to-pull))
-                 (clean? (git-clean?))
-                 (lastupdate (git-last-update)))
-             (format-repository (basename repo) numup numdown clean?
+           (let ((numup (repo-pushable repo))
+                 (numdown (repo-pullable repo))
+                 (clean? (repo-state repo))
+                 (lastupdate (repo-updated repo)))
+             (format-repository (repo-name repo) numup numdown clean?
                                 lastupdate)))
-         (format #t "~a:~15tnot found at ~s\n" (basename repo) repo)))
+         (format #t "~a:~15tnot found at ~s\n"
+                 (repo-name repo) (repo-location repo))))
    repositories))
 
 (define (list-repository-locations)
   "List the registered locations of repositories."
-  (for-each (lambda (repo)
-              (display repo)
-              (newline))
-            (sort repositories string<?)))
+  (for-each
+   (lambda (repo)
+     (display (repo-location repo))
+     (newline))
+   (sort repositories
+         (lambda (s1 s2)
+           (string<? (repo-location s1) (repo-location s2))))))
 
 (define (purge)
   "Purge all items from the list that can no longer be found."
@@ -216,13 +253,12 @@ to the tracked files. Utracked files will not register."
           (check?               => repository-registered?)
           (#t                      (list-repositories)))))
 
-(define repositories-file
-  (data-file "repos.scm"))
+(define repositories-file (data-file "repos.scm"))
 
 (define repositories
   (if (file-exists? repositories-file)
       (let* ((port (open-input-file repositories-file))
              (result (read port)))
         (close-port port)
-        result)
+        (map-in-order (lambda (repo) (make <repository> repo)) result))
       '()))
