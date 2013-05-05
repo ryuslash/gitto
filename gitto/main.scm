@@ -20,6 +20,7 @@
 (define-module (gitto main)
   #:use-module (gitto path)
   #:use-module (ice-9 format)
+  #:use-module (ice-9 ftw)
   #:use-module (ice-9 getopt-long)
   #:use-module (ice-9 popen)
   #:use-module (ice-9 rdelim)
@@ -34,36 +35,57 @@
   (name #:getter repo-name)
   (location #:getter repo-location)
   (clean? #:getter repo-clean?)
-  (pushable #:getter repo-pushable)
-  (pullable #:getter repo-pullable)
-  (updated #:getter repo-updated))
+  (branches #:getter repo-branches))
+
+(define-class <branch> ()
+  (name #:getter branch-name)
+  (pushable #:getter branch-pushable)
+  (pullable #:getter branch-pullable)
+  (updated #:getter branch-updated))
 
 (define-method (initialize (repo <repository>) args)
   (let ((dir (car args)))
     (slot-set! repo 'name (basename dir))
     (slot-set! repo 'location dir)
     (slot-set! repo 'clean? (delay (git-clean? dir)))
-    (slot-set! repo 'pushable (delay (git-revs-to-push dir)))
-    (slot-set! repo 'pullable (delay (git-revs-to-pull dir)))
-    (slot-set! repo 'updated (delay (git-last-update dir)))))
+
+    (slot-set! repo 'branches
+               (delay (map (lambda (b) (make <branch> b dir))
+                           (git-branches dir))))))
+
+(define-method (initialize (branch <branch>) args)
+  (let ((name (car args))
+        (dir (cadr args)))
+    (slot-set! branch 'name name)
+    (slot-set! branch 'pushable (delay (git-revs-to-push dir name)))
+    (slot-set! branch 'pullable (delay (git-revs-to-pull dir name)))
+    (slot-set! branch 'updated (delay (git-last-update dir name)))))
 
 (define-method (repo-clean? (repo <repository>))
   (force (slot-ref repo 'clean?)))
-(define-method (repo-pushable (repo <repository>))
-  (force (slot-ref repo 'pushable)))
-(define-method (repo-pullable (repo <repository>))
-  (force (slot-ref repo 'pullable)))
-(define-method (repo-updated (repo <repository>))
-  (force (slot-ref repo 'updated)))
+(define-method (repo-branches (repo <repository>))
+  (force (slot-ref repo 'branches)))
+(define-method (branch-pushable (branch <branch>))
+  (force (slot-ref branch 'pushable)))
+(define-method (branch-pullable (branch <branch>))
+  (force (slot-ref branch 'pullable)))
+(define-method (branch-updated (branch <branch>))
+  (force (slot-ref branch 'updated)))
 
 (define-method (print (repo <repository>))
   (if (file-exists? (repo-location repo))
-      (format
-       #t "~a:~15t~d to push, ~d to pull and is ~a. Last update: ~a\n"
-       (repo-name repo) (repo-pushable repo) (repo-pullable repo)
-       (if (repo-clean? repo) "clean" "dirty") (repo-updated repo))
+      (begin
+        (format #t "~a: Worktree is ~a~%" (repo-name repo)
+                (if (repo-clean? repo) "clean" "dirty"))
+        (for-each print (repo-branches repo))
+        (newline))
       (format #t "~a:~15tnot found at ~s\n"
               (repo-name repo) (repo-location repo))))
+
+(define-method (print (branch <branch>))
+  (format #t "  ~a:~15t~d to push and ~d to pull. Last update: ~a~%"
+          (branch-name branch) (branch-pushable branch)
+          (branch-pullable branch) (branch-updated branch)))
 
 (define (storage-dir xdg-env fallback)
   (let ((xdg (getenv xdg-env)))
@@ -165,16 +187,20 @@ gitto [options]
       (display "Not a registered repository."))
   (newline))
 
-(define (git-revs-to-push dir)
+(define (git-revs-to-push dir branch)
   "Check how many commits should be pushed upstream."
-  (let* ((pipe (start-git dir "log --pretty=oneline @{u}.." "| wc -l"))
+  (let* ((pipe (start-git
+                dir (format #f "log --pretty=oneline ~a@{u}..~:*~a" branch)
+                "| wc -l"))
          (num (string->number (read-line pipe))))
     (close-pipe pipe)
     num))
 
-(define (git-revs-to-pull dir)
+(define (git-revs-to-pull dir branch)
   "Check how many commits should be pulled/merged from upstream."
-  (let* ((pipe (start-git dir "log --pretty=oneline ..@{u}" "| wc -l"))
+  (let* ((pipe (start-git
+                dir (format #f "log --pretty=oneline ~a..~:*~a@{u}" branch)
+                "| wc -l"))
          (num (string->number (read-line pipe))))
     (close-pipe pipe)
     num))
@@ -184,6 +210,12 @@ gitto [options]
    (format #f "git --work-tree=~s --git-dir=\"~a/.git\" ~a 2>/dev/null ~a"
            dir dir args extra)))
 
+(define (git-branches dir)
+  (let ((pipe (start-git dir "branch")))
+    (map
+     (lambda (b) (string-trim-both b (char-set #\* #\space)))
+     (string-split (string-trim-right (read-string pipe)) #\newline))))
+
 (define (git-clean? dir)
   "Check whether a repository is clean, meaning there are no changes
 to the tracked files. Utracked files will not register."
@@ -192,9 +224,10 @@ to the tracked files. Utracked files will not register."
     (close-pipe pipe)
     clean?))
 
-(define (git-last-update dir)
+(define (git-last-update dir branch)
   "Check when the last update upstream was."
-  (let* ((pipe (start-git dir "log -1 --format=%ar @{u}"))
+  (let* ((pipe (start-git
+                dir (format #f "log -1 --format=%ar ~a@{u}" branch)))
          (relative-last-update (read-line pipe)))
     (close-pipe pipe)
     (if (eof-object? relative-last-update)
