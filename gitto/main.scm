@@ -30,23 +30,30 @@
 (define-generic same-repository?)
 
 (define-class <repository> ()
-  (name #:accessor repo-name)
-  (location #:init-keyword #:location #:accessor repo-location)
-  (state #:accessor repo-state)
-  (pushable #:accessor repo-pushable)
-  (pullable #:accessor repo-pullable)
-  (updated #:accessor repo-updated))
+  (name #:getter repo-name)
+  (location #:getter repo-location)
+  (state #:getter repo-state)
+  (pushable #:getter repo-pushable)
+  (pullable #:getter repo-pullable)
+  (updated #:getter repo-updated))
 
 (define-method (initialize (repo <repository>) args)
-  (let ((cwd (getcwd)))
-    (chdir (car args))
-    (slot-set! repo 'name (basename (car args)))
-    (slot-set! repo 'location (car args))
-    (slot-set! repo 'state (git-clean?))
-    (slot-set! repo 'pushable (git-revs-to-push))
-    (slot-set! repo 'pullable (git-revs-to-pull))
-    (slot-set! repo 'updated (git-last-update))
-    (chdir cwd)))
+  (let ((dir (car args)))
+    (slot-set! repo 'name (basename dir))
+    (slot-set! repo 'location dir)
+    (slot-set! repo 'state (delay (git-clean? dir)))
+    (slot-set! repo 'pushable (delay (git-revs-to-push dir)))
+    (slot-set! repo 'pullable (delay (git-revs-to-pull dir)))
+    (slot-set! repo 'updated (delay (git-last-update dir)))))
+
+(define-method (repo-state (repo <repository>))
+  (force (slot-ref repo 'state)))
+(define-method (repo-pushable (repo <repository>))
+  (force (slot-ref repo 'pushable)))
+(define-method (repo-pullable (repo <repository>))
+  (force (slot-ref repo 'pullable)))
+(define-method (repo-updated (repo <repository>))
+  (force (slot-ref repo 'updated)))
 
 (define (storage-dir xdg-env fallback)
   (let ((xdg (getenv xdg-env)))
@@ -97,7 +104,7 @@ gitto [options]
 (define (known? repo)
   "Do we know REPO?"
   (or (member repo repositories same-repository?)
-      (member (realpath (repo-location repo))
+      (member (realpath (if (string? repo) repo (repo-location repo)))
               repositories same-repository?)))
 
 (define (save-repositories-list)
@@ -153,34 +160,36 @@ gitto [options]
    #t "~a:~15t~d to push, ~d to pull and is ~a. Last update: ~a\n"
    name pushable pullable (if clean? "clean" "dirty") updated))
 
-(define (git-revs-to-push)
+(define (git-revs-to-push dir)
   "Check how many commits should be pushed upstream."
-  (let* ((pipe (open-input-pipe
-                "git log --pretty=oneline @{u}.. 2>/dev/null | wc -l"))
+  (let* ((pipe (start-git dir "log --pretty=oneline @{u}.." "| wc -l"))
          (num (string->number (read-line pipe))))
     (close-pipe pipe)
     num))
 
-(define (git-revs-to-pull)
+(define (git-revs-to-pull dir)
   "Check how many commits should be pulled/merged from upstream."
-  (let* ((pipe (open-input-pipe
-              "git log --pretty=oneline ..@{u} 2>/dev/null | wc -l"))
+  (let* ((pipe (start-git dir "log --pretty=oneline ..@{u}" "| wc -l"))
          (num (string->number (read-line pipe))))
     (close-pipe pipe)
     num))
 
-(define (git-clean?)
+(define* (start-git dir args #:optional (extra ""))
+  (open-input-pipe
+   (format #f "git --work-tree=~s --git-dir=\"~a/.git\" ~a 2>/dev/null ~a"
+           dir dir args extra)))
+
+(define (git-clean? dir)
   "Check whether a repository is clean, meaning there are no changes
 to the tracked files. Utracked files will not register."
-  (let* ((pipe (open-input-pipe "git status -suno 2>/dev/null"))
+  (let* ((pipe (start-git dir "status -suno"))
          (clean? (eof-object? (read-delimited "" pipe))))
     (close-pipe pipe)
     clean?))
 
-(define (git-last-update)
+(define (git-last-update dir)
   "Check when the last update upstream was."
-  (let* ((pipe (open-input-pipe
-                "git log -1 --format=%ar @{u} 2>/dev/null"))
+  (let* ((pipe (start-git dir "log -1 --format=%ar @{u}"))
          (relative-last-update (read-line pipe)))
     (close-pipe pipe)
     (if (eof-object? relative-last-update)
