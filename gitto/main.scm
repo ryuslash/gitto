@@ -114,6 +114,11 @@ gitto [options]
       (display "Not a registered repository."))
   (newline))
 
+(define (format-repository name pushable pullable clean? updated)
+  (format
+   #t "~a:~15t~d to push, ~d to pull and is ~a. Last update: ~a\n"
+   name pushable pullable (if clean? "clean" "dirty") updated))
+
 (define (git-revs-to-push)
   "Check how many commits should be pushed upstream."
   (let* ((pipe (open-input-pipe
@@ -159,10 +164,8 @@ to the tracked files. Utracked files will not register."
                  (numdown (git-revs-to-pull))
                  (clean? (git-clean?))
                  (lastupdate (git-last-update)))
-             (format
-              #t "~a:~15t~d to push, ~d to pull and is ~adirty. Last update: ~a\n"
-              (basename repo) numup numdown (if clean? "not " "")
-              lastupdate)))
+             (format-repository (basename repo) numup numdown clean?
+                                lastupdate)))
          (format #t "~a:~15tnot found at ~s\n" (basename repo) repo)))
    repositories))
 
