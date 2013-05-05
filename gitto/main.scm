@@ -28,11 +28,12 @@
   #:export (main))
 
 (define-generic same-repository?)
+(define-generic print)
 
 (define-class <repository> ()
   (name #:getter repo-name)
   (location #:getter repo-location)
-  (state #:getter repo-state)
+  (clean? #:getter repo-clean?)
   (pushable #:getter repo-pushable)
   (pullable #:getter repo-pullable)
   (updated #:getter repo-updated))
@@ -41,19 +42,28 @@
   (let ((dir (car args)))
     (slot-set! repo 'name (basename dir))
     (slot-set! repo 'location dir)
-    (slot-set! repo 'state (delay (git-clean? dir)))
+    (slot-set! repo 'clean? (delay (git-clean? dir)))
     (slot-set! repo 'pushable (delay (git-revs-to-push dir)))
     (slot-set! repo 'pullable (delay (git-revs-to-pull dir)))
     (slot-set! repo 'updated (delay (git-last-update dir)))))
 
-(define-method (repo-state (repo <repository>))
-  (force (slot-ref repo 'state)))
+(define-method (repo-clean? (repo <repository>))
+  (force (slot-ref repo 'clean?)))
 (define-method (repo-pushable (repo <repository>))
   (force (slot-ref repo 'pushable)))
 (define-method (repo-pullable (repo <repository>))
   (force (slot-ref repo 'pullable)))
 (define-method (repo-updated (repo <repository>))
   (force (slot-ref repo 'updated)))
+
+(define-method (print (repo <repository>))
+  (if (file-exists? (repo-location repo))
+      (format
+       #t "~a:~15t~d to push, ~d to pull and is ~a. Last update: ~a\n"
+       (repo-name repo) (repo-pushable repo) (repo-pullable repo)
+       (if (repo-clean? repo) "clean" "dirty") (repo-updated repo))
+      (format #t "~a:~15tnot found at ~s\n"
+              (repo-name repo) (repo-location repo))))
 
 (define (storage-dir xdg-env fallback)
   (let ((xdg (getenv xdg-env)))
@@ -155,11 +165,6 @@ gitto [options]
       (display "Not a registered repository."))
   (newline))
 
-(define (format-repository name pushable pullable clean? updated)
-  (format
-   #t "~a:~15t~d to push, ~d to pull and is ~a. Last update: ~a\n"
-   name pushable pullable (if clean? "clean" "dirty") updated))
-
 (define (git-revs-to-push dir)
   "Check how many commits should be pushed upstream."
   (let* ((pipe (start-git dir "log --pretty=oneline @{u}.." "| wc -l"))
@@ -198,19 +203,7 @@ to the tracked files. Utracked files will not register."
 
 (define (list-repositories)
   "List information about every repository."
-  (for-each
-   (lambda (repo)
-     (if (file-exists? (repo-location repo))
-         (begin
-           (let ((numup (repo-pushable repo))
-                 (numdown (repo-pullable repo))
-                 (clean? (repo-state repo))
-                 (lastupdate (repo-updated repo)))
-             (format-repository (repo-name repo) numup numdown clean?
-                                lastupdate)))
-         (format #t "~a:~15tnot found at ~s\n"
-                 (repo-name repo) (repo-location repo))))
-   repositories))
+  (for-each print repositories))
 
 (define (list-repository-locations)
   "List the registered locations of repositories."
