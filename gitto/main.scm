@@ -1,3 +1,4 @@
+;; -*- coding: utf-8; -*-
 ;; gitto -- Keep track of your git repositories
 ;; Copyright (C) 2012 Tom Willemsen <tom at ryuslash dot org>
 
@@ -24,23 +25,15 @@
   #:use-module (gitto path)
   #:export (main))
 
-(define data-dir
-  (let ((xdg (getenv "XGD_DATA_HOME"))
-        (name "gitto"))
-    (if xdg
-        (string-append xdg "/" name)
-        (string-append (getenv "HOME") "/." name))))
+(define (storage-dir xdg-env fallback)
+  (let ((xdg (getenv xdg-env)))
+    (string-append
+     (or xdg (getenv "HOME")) (unless xdg "/" fallback) "/gitto")))
 
-(define repositories-file
-  (string-append data-dir "/repos.scm"))
-
-(define repositories
-  (if (file-exists? repositories-file)
-      (let* ((port (open-input-file repositories-file))
-             (result (read port)))
-        (close-port port)
-        result)
-      '()))
+(define (config-dir) (storage-dir "XDG_CONFIG_HOME" "/.config"))
+(define (config-file file) (string-append (config-dir) "/" file))
+(define (data-dir) (storage-dir "XDG_DATA_HOME" "/.local/share"))
+(define (data-file file) (string-append (data-dir) "/" file))
 
 (define (version)
   "Display version information."
@@ -78,8 +71,9 @@ gitto [options]
 
 (define (save-repositories-list)
   "Save the list of repositories."
-  (if (not (file-exists? data-dir))
-      (mkdir data-dir))
+  (let ((dir (data-dir)))
+    (unless (file-exists? dir)
+      (mkdir dir)))
 
   ;; Sort first
   (set! repositories
@@ -202,7 +196,14 @@ to the tracked files. Utracked files will not register."
          (removal?             (option-ref options 'remove #f))
          (list?                (option-ref options 'repositories #f))
          (purge?               (option-ref options 'purge #f))
-         (check?               (option-ref options 'check #f)))
+         (check?               (option-ref options 'check #f))
+         (cfg (config-file "rc.scm")))
+    (when (file-exists? cfg)
+      (save-module-excursion
+       (lambda ()
+         (set-current-module (resolve-module '(gitto main)))
+         (primitive-load cfg))))
+
     (cond (version-wanted?         (version))
           (help-wanted?            (help))
           (registration-needed? => register-repository)
@@ -211,3 +212,14 @@ to the tracked files. Utracked files will not register."
           (purge?                  (purge))
           (check?               => repository-registered?)
           (#t                      (list-repositories)))))
+
+(define repositories-file
+  (data-file "repos.scm"))
+
+(define repositories
+  (if (file-exists? repositories-file)
+      (let* ((port (open-input-file repositories-file))
+             (result (read port)))
+        (close-port port)
+        result)
+      '()))
