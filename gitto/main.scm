@@ -90,7 +90,7 @@
 (define (storage-dir xdg-env fallback)
   (let ((xdg (getenv xdg-env)))
     (string-append
-     (or xdg (getenv "HOME")) (unless xdg "/" fallback) "/gitto")))
+     (or xdg (getenv "HOME")) (if xdg "" fallback) "/gitto")))
 
 (define (config-dir) (storage-dir "XDG_CONFIG_HOME" "/.config"))
 (define (config-file file) (string-append (config-dir) "/" file))
