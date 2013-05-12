@@ -19,7 +19,7 @@
 
 (define-module (gitto config)
   #:use-module (ice-9 rdelim)
-  #:export (read-config))
+  #:export (read-config write-config))
 
 (define (parse-setting line)
   (let ((idx (string-index line #\=)))
@@ -45,3 +45,16 @@
                                (parse-setting line))))))
     (close-port port)
     config))
+
+(define* (write-config config #:optional (file #f))
+  (let ((thunk (lambda () (for-each write-section config))))
+    (if file
+        (with-output-to-file file thunk)
+        (thunk))))
+
+(define (write-section section)
+  (format #t "[~a]~%" (car section))
+  (for-each write-setting (cdr section)))
+
+(define (write-setting setting)
+  (format #t "~8t~a = ~a~%" (car setting) (cdr setting)))
