@@ -18,6 +18,7 @@
 ;; along with gitto.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gitto main)
+  #:use-module (gitto config)
   #:use-module (gitto git)
   #:use-module (gitto path)
   #:use-module (ice-9 format)
@@ -134,14 +135,38 @@ gitto [options]
                 repositories))
   (save-repositories-list))
 
+(define (show-global-config)
+  (write-config global-config))
+
+(define (show-config)
+  (for-each (lambda (repo)
+              (display (string-upcase (repo-name repo)))
+              (newline)
+              (write-config (read-config (repo-location repo)))
+              (newline)
+              (newline))
+            repositories))
+
+(define (update-config)
+  (for-each (lambda (repo)
+              (write-config
+               (merge-config (repo-name repo)
+                             (read-config (repo-location repo))
+                             global-config)
+               (string-append (repo-location repo) "/.git/config")))
+            repositories))
+
 (define option-spec
-  `((version      (single-char #\v))
-    (help         (single-char #\h))
-    (register     (single-char #\r) (value #t) (predicate ,git-dir?))
-    (remove       (single-char #\R) (value #t) (predicate ,known?))
-    (repositories (single-char #\l))
-    (purge        (single-char #\p))
-    (check        (single-char #\c) (value #t))))
+  `((version       (single-char #\v))
+    (help          (single-char #\h))
+    (register      (single-char #\r) (value #t) (predicate ,git-dir?))
+    (remove        (single-char #\R) (value #t) (predicate ,known?))
+    (repositories  (single-char #\l))
+    (purge         (single-char #\p))
+    (check         (single-char #\c) (value #t))
+    (config        (single-char #\C))
+    (global-config)
+    (update-config)))
 
 (define (main args)
   "Parse the command line options and run the appropriate functions."
@@ -153,6 +178,9 @@ gitto [options]
          (list?                (option-ref options 'repositories #f))
          (purge?               (option-ref options 'purge #f))
          (check?               (option-ref options 'check #f))
+         (config?              (option-ref options 'config #f))
+         (global-config?       (option-ref options 'global-config #f))
+         (update-config?       (option-ref options 'update-config #f))
          (cfg (config-file "rc.scm")))
     (when (file-exists? cfg)
       (save-module-excursion
@@ -167,6 +195,9 @@ gitto [options]
           (list?                   (list-repository-locations))
           (purge?                  (purge))
           (check?               => repository-registered?)
+          (config?                 (show-config))
+          (global-config?          (show-global-config))
+          (update-config?          (update-config))
           (#t                      (list-repositories)))))
 
 (define repositories-file (data-file "repos.scm"))
