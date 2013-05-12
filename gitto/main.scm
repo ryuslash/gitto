@@ -169,7 +169,7 @@ gitto [options]
         (set! repositories (append `(,repository) repositories))
         (save-repositories-list)
         (simple-format #t "Repository ~A registered."
-                       (repository-name repository)))
+                       (repo-name repository)))
       (display "Repository already registered."))
   (newline))
 
@@ -250,7 +250,10 @@ to the tracked files. Utracked files will not register."
 
 (define (purge)
   "Purge all items from the list that can no longer be found."
-  (set! repositories  (filter file-exists? repositories))
+  (set! repositories
+        (filter (lambda (repo)
+                  (file-exists? (repo-location repo)))
+                repositories))
   (save-repositories-list))
 
 (define option-spec
