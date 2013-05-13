@@ -18,8 +18,34 @@
 ;; along with gitto.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gitto config)
+  #:use-module (ice-9 format)
   #:use-module (ice-9 rdelim)
-  #:export (read-config write-config))
+  #:export (global-config
+
+            merge-config
+            read-config
+            write-config))
+
+(define global-config '())
+
+(define (merge-config repo-name x y)
+  (let ((lst (if x (list-copy x) '())))
+    (for-each
+     (lambda (s)
+       (let ((b-sec (assoc (car s) lst)))
+        (set! lst (assoc-set!
+                   lst (car s) (merge-settings
+                                repo-name (if b-sec (cdr b-sec) #f) (cdr s))))))
+     y)
+    lst))
+
+(define (merge-settings repo-name x y)
+  (let ((lst (if x (list-copy x) '())))
+    (for-each (lambda (v)
+                (set! lst (assoc-set!
+                           lst (car v) (format #f (cdr v) repo-name))))
+              y)
+    lst))
 
 (define (parse-setting line)
   (let ((idx (string-index line #\=)))
