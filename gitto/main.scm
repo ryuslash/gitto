@@ -28,6 +28,9 @@
   #:use-module (srfi srfi-1)
   #:export (main))
 
+(define config-exclusion-list '()
+  "A list of strings naming the repositories to be left alone.")
+
 (define (storage-dir xdg-env fallback)
   (let ((xdg (getenv xdg-env)))
     (string-append
@@ -149,11 +152,12 @@ gitto [options]
 
 (define (update-config)
   (for-each (lambda (repo)
-              (write-config
-               (merge-config (repo-name repo)
-                             (read-config (repo-location repo))
-                             global-config)
-               (string-append (repo-location repo) "/.git/config")))
+              (unless (member (repo-name repo) config-exclusion-list)
+                (write-config
+                 (merge-config (repo-name repo)
+                               (read-config (repo-location repo))
+                               global-config)
+                 (string-append (repo-location repo) "/.git/config"))))
             repositories))
 
 (define option-spec
