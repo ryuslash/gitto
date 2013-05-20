@@ -28,8 +28,7 @@
   #:use-module (srfi srfi-1)
   #:export (main))
 
-(define config-exclusion-list '()
-  "A list of strings naming the repositories to be left alone.")
+(define config-exclusion-list '())
 
 (define (storage-dir xdg-env fallback)
   (let ((xdg (getenv xdg-env)))
