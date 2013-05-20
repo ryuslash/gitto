@@ -1,6 +1,6 @@
 ;; -*- coding: utf-8; -*-
 ;; gitto -- Keep track of your git repositories
-;; Copyright (C) 2012 Tom Willemsen <tom at ryuslash dot org>
+;; Copyright (C) 2012 Tom Willemse <tom at ryuslash dot org>
 
 ;; This file is part of gitto.
 
@@ -43,7 +43,7 @@
 (define (version)
   "Display version information."
   (display "gitto 0.1.0") (newline)
-  (display "Copyright (C) 2012 Tom Willemsen") (newline)
+  (display "Copyright (C) 2012 Tom Willemse") (newline)
   (display "This program comes with ABSOLUTELY NO WARRANTY.") (newline)
   (display "You may redistribute copies of this program") (newline)
   (display "under the terms of the GNU General Public License.") (newline)

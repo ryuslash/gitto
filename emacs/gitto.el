@@ -1,8 +1,8 @@
 ;;; gitto.el --- Gitto in emacs
 
-;; Copyright (C) 2012  Tom Willemsen
+;; Copyright (C) 2012  Tom Willemse
 
-;; Author: Tom Willemsen <thomas@aethon.nl>
+;; Author: Tom Willemse <tom@ryuslash.org>
 ;; Keywords: convenience
 ;; Package-Version: 0.2.0
 

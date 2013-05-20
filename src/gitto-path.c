@@ -1,5 +1,5 @@
 /* gitto -- Keep track of your git repositories
-   Copyright (C) 2012 Tom Willemsen <tom at ryuslash dot org>
+   Copyright (C) 2012 Tom Willemse <tom at ryuslash dot org>
 
    This file is part of gitto.
 
