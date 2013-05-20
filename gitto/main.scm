@@ -22,12 +22,12 @@
   #:use-module (gitto git)
   #:use-module (gitto path)
   #:use-module (ice-9 format)
-  #:use-module (ice-9 getopt-long)
   #:use-module (ice-9 popen)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:export (main))
 
+(define command-list '())
 (define config-exclusion-list '())
 
 (define (storage-dir xdg-env fallback)
@@ -48,6 +48,7 @@
   (display "You may redistribute copies of this program") (newline)
   (display "under the terms of the GNU General Public License.") (newline)
   (display "For more information about these matters, see the file named COPYING.") (newline))
+(set! command-list (append command-list `(("version" . ,version))))
 
 (define (help)
   "Display some help."
@@ -60,6 +61,7 @@ gitto [options]
   -v, --version        Display version
   -h, --help           Display this help
 "))
+(set! command-list (append command-list `(("help" . ,help))))
 
 (define (known? repo)
   "Do we know REPO?"
@@ -88,6 +90,8 @@ gitto [options]
   "Check to see if REPOSITORY has been registered."
   (format #t "Repository is~a registered~%"
           (if (known? repository) "" " not")))
+(set! command-list (append command-list
+                           `(("check" . ,repository-registered?))))
 
 (define (register-repository repository)
   "Register REPOSITORY in the repository list."
@@ -100,6 +104,8 @@ gitto [options]
                        (repo-name repository)))
       (display "Repository already registered."))
   (newline))
+(set! command-list (append command-list
+                           `(("add" . ,register-repository))))
 
 (define (remove-repository repository)
   "Remove/unregister REPOSITORY from the repository list."
@@ -114,10 +120,16 @@ gitto [options]
         (simple-format #t "Repository ~A removed." repository))
       (display "Not a registered repository."))
   (newline))
+(set! command-list (append command-list
+                           `(("remove" . ,remove-repository))))
 
-(define (list-repositories)
+(define (list-repositories . args)
   "List information about every repository."
-  (for-each print repositories))
+  (if (and (not (eq? args '())) (equal? (car args) "locations"))
+      (list-repository-locations)
+      (for-each print repositories)))
+(set! command-list (append command-list
+                           `(("list" . ,list-repositories))))
 
 (define (list-repository-locations)
   "List the registered locations of repositories."
@@ -136,18 +148,24 @@ gitto [options]
                   (file-exists? (repo-location repo)))
                 repositories))
   (save-repositories-list))
+(set! command-list (append command-list `(("purge" . ,purge))))
 
 (define (show-global-config)
   (write-config global-config))
 
-(define (show-config)
-  (for-each (lambda (repo)
-              (display (string-upcase (repo-name repo)))
-              (newline)
-              (write-config (read-config (repo-location repo)))
-              (newline)
-              (newline))
-            repositories))
+(define (show-config . args)
+  (cond
+   ((eq? args '())
+    (for-each (lambda (repo)
+                (display (string-upcase (repo-name repo)))
+                (newline)
+                (write-config (read-config (repo-location repo)))
+                (newline)
+                (newline))
+              repositories))
+   ((equal? (car args) "global") (show-global-config))
+   ((equal? (car args) "update") (update-config))))
+(set! command-list (append command-list `(("config" . ,show-config))))
 
 (define (update-config)
   (for-each (lambda (repo)
@@ -159,49 +177,23 @@ gitto [options]
                  (string-append (repo-location repo) "/.git/config"))))
             repositories))
 
-(define option-spec
-  `((version       (single-char #\v))
-    (help          (single-char #\h))
-    (register      (single-char #\r) (value #t) (predicate ,git-dir?))
-    (remove        (single-char #\R) (value #t) (predicate ,known?))
-    (repositories  (single-char #\l))
-    (purge         (single-char #\p))
-    (check         (single-char #\c) (value #t))
-    (config        (single-char #\C))
-    (global-config)
-    (update-config)))
-
 (define (main args)
   "Parse the command line options and run the appropriate functions."
-  (let* ((options (getopt-long args option-spec))
-         (help-wanted?         (option-ref options 'help #f))
-         (version-wanted?      (option-ref options 'version #f))
-         (registration-needed? (option-ref options 'register #f))
-         (removal?             (option-ref options 'remove #f))
-         (list?                (option-ref options 'repositories #f))
-         (purge?               (option-ref options 'purge #f))
-         (check?               (option-ref options 'check #f))
-         (config?              (option-ref options 'config #f))
-         (global-config?       (option-ref options 'global-config #f))
-         (update-config?       (option-ref options 'update-config #f))
-         (cfg (config-file "rc.scm")))
+  (let ((cfg (config-file "rc.scm")))
     (when (file-exists? cfg)
       (save-module-excursion
        (lambda ()
          (set-current-module (resolve-module '(gitto main)))
          (primitive-load cfg))))
 
-    (cond (version-wanted?         (version))
-          (help-wanted?            (help))
-          (registration-needed? => register-repository)
-          (removal?             => remove-repository)
-          (list?                   (list-repository-locations))
-          (purge?                  (purge))
-          (check?               => repository-registered?)
-          (config?                 (show-config))
-          (global-config?          (show-global-config))
-          (update-config?          (update-config))
-          (#t                      (list-repositories)))))
+    (let* ((command-spec (cdr (member "gitto" args string-suffix?)))
+           (command? (not (eq? command-spec '())))
+           (command
+            (assoc-ref command-list
+                       (car (if command? command-spec '("list"))))))
+      (if command
+          (apply command (if command? (cdr command-spec) '()))
+          (format #t "Unknown command: ~a~%" (car command-spec))))))
 
 (define repositories-file (data-file "repos.scm"))
 
