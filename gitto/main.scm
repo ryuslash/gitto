@@ -53,13 +53,19 @@
 (define (help)
   "Display some help."
   (display "\
-gitto [options]
-  -r, --register REPO  Register a new repository directory
-  -R, --remove REPO    Remove a repository directory
-  -l, --repositories   List all registered repositories' locations
-  -p, --purge          Remove all repositories that don't exist
-  -v, --version        Display version
-  -h, --help           Display this help
+gitto [command [arguments ...]]
+  add                  Register a new repository directory
+  remove               Remove a repository directory
+  check                Check if a repository has been registered
+  list                 List all repositories and their status
+  list locations       List all registered repositories' locations
+  purge                Remove all repositories that don't exist
+  config               Show each repository's configuration
+  config global        Show template configuration
+  config update        Merge template configuration with each
+                       repository's configuration
+  version              Display version
+  help                 Display this help
 "))
 (set! command-list (append command-list `(("help" . ,help))))
 
