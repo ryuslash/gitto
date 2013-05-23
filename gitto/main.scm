@@ -21,6 +21,7 @@
   #:use-module (gitto config)
   #:use-module (gitto git)
   #:use-module (gitto path)
+  #:use-module (gitto ui)
   #:use-module (ice-9 format)
   #:use-module (ice-9 popen)
   #:use-module (oop goops)
@@ -106,8 +107,17 @@ gitto [command [arguments ...]]
       (begin
         (set! repositories (append `(,repository) repositories))
         (save-repositories-list)
-        (simple-format #t "Repository ~A registered."
-                       (repo-name repository)))
+        (simple-format #t "Repository ~A registered.~%"
+                       (repo-name repository))
+
+        ;; Ask the user if they would like to merge their config
+        ;; template with the newly registered repository if they have
+        ;; a configuration set-up and the current input port is a tty.
+        (when (and (isatty? (current-input-port))
+                   (not (eq? global-config '()))
+                   (y-or-n? "Would you like to merge your settings?"
+                            #:default #t))
+          (update-repo-config repository)))
       (display "Repository already registered."))
   (newline))
 (set! command-list (append command-list
@@ -173,15 +183,16 @@ gitto [command [arguments ...]]
    ((equal? (car args) "update") (update-config))))
 (set! command-list (append command-list `(("config" . ,show-config))))
 
+(define (update-repo-config repo)
+  (unless (member (repo-name repo) config-exclusion-list)
+    (write-config
+     (merge-config (repo-name repo)
+                   (read-config (repo-location repo))
+                   global-config)
+     (string-append (repo-location repo) "/.git/config"))))
+
 (define (update-config)
-  (for-each (lambda (repo)
-              (unless (member (repo-name repo) config-exclusion-list)
-                (write-config
-                 (merge-config (repo-name repo)
-                               (read-config (repo-location repo))
-                               global-config)
-                 (string-append (repo-location repo) "/.git/config"))))
-            repositories))
+  (for-each update-repo-config repositories))
 
 (define (main args)
   "Parse the command line options and run the appropriate functions."
