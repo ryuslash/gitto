@@ -51,12 +51,22 @@
      y)
     lst))
 
+(define (merge-setting repo-name lst var val)
+  (assoc-set! lst var (format #f val repo-name)))
+
 (define (merge-settings repo-name x y)
   (let ((lst (if x (list-copy x) '())))
-    (for-each (lambda (v)
-                (set! lst (assoc-set!
-                           lst (car v) (format #f (cdr v) repo-name))))
-              y)
+    (for-each
+     (lambda (v)
+       (if (list? v)
+           (begin
+             (set! lst (merge-setting repo-name lst (car v) (cadr v)))
+             (set! lst (append lst (map (lambda (s)
+                                          (cons (car v)
+                                                (format #f s repo-name)))
+                                        (cddr v)))))
+           (set! lst (merge-setting repo-name lst (car v) (cdr v)))))
+     y)
     lst))
 
 (define (parse-setting line)
