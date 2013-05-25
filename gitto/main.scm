@@ -65,6 +65,7 @@ gitto [command [arguments ...]]
   config global        Show template configuration
   config update        Merge template configuration with each
                        repository's configuration
+  config hooks         Install configured hooks for repositories
   version              Display version
   help                 Display this help
 "))
@@ -180,7 +181,12 @@ gitto [command [arguments ...]]
                 (newline))
               repositories))
    ((equal? (car args) "global") (show-global-config))
-   ((equal? (car args) "update") (update-config))))
+   ((equal? (car args) "update") (update-config))
+   ((equal? (car args) "hooks")
+    (for-each (lambda (r)
+                (unless (member (repo-name r) config-exclusion-list)
+                  (install-hooks (repo-location r))))
+              repositories))))
 (set! command-list (append command-list `(("config" . ,show-config))))
 
 (define (update-repo-config repo)

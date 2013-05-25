@@ -21,12 +21,24 @@
   #:use-module (ice-9 format)
   #:use-module (ice-9 rdelim)
   #:export (global-config
+            hook-alist
 
+            install-hooks
             merge-config
             read-config
             write-config))
 
 (define global-config '())
+(define hook-alist '())
+
+(define (install-hooks repo-location)
+  (for-each
+   (lambda (hook)
+     (let ((new-name (string-append repo-location "/.git/hooks/"
+                                    (car hook))))
+       (unless (file-exists? new-name)
+         (symlink (cdr hook) new-name))))
+   hook-alist))
 
 (define (merge-config repo-name x y)
   (let ((lst (if x (list-copy x) '())))
