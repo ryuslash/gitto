@@ -1,0 +1,21 @@
+#+TITLE: gitto
+#+HTML_LINK_HOME: http://ryuslash.org
+#+OPTIONS: num:nil toc:nil author:nil
+#+STARTUP: showall
+#+STYLE: <link rel="stylesheet" type="text/css" href="stylesheet.css" />
+
+#+BEGIN_CENTER
+[[http://code.ryuslash.org/cgit.cgi/gitto/][Browse source]]
+[[http://blog.ryuslash.org/tags/gitto][Read posts]]
+Dowlnoad: [[http://code.ryuslash.org/cgit.cgi/gitto/snapshot/gitto-master.tar.gz][TAR.GZ]], [[http://code.ryuslash.org/cgit.cgi/gitto/snapshot/gitto-master.zip][ZIP]]
+#+END_CENTER
+
+#+INCLUDE: "../README.org"
+
+* INSTALLING
+
+#+INCLUDE: "../INSTALL" :minlevel 2
+
+* CONTRIBUTING
+
+#+INCLUDE: "../CONTRIBUTING" :minlevel 2

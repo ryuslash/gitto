@@ -1,0 +1,36 @@
+# -*- mode: org; -*-
+#+STARTUP: showall
+
+In order to install ~gitto~, just run:
+
+: make install
+
+This will install ~gitto~ to ~/usr/local/~, if you would like to install
+it somewhere else you can use the =DESTDIR= variable:
+
+: make install DESTDIR=/some/other/place
+
+This will install ~gitto~ to =/some/other/place/=.
+
+* Packages
+
+  - There is also a [[https://aur.archlinux.org/packages/gitto-git/][package]] in the [[http://aur.archlinux.org][Archlinux User Repository]], which
+    installs the latest git checkout.
+
+* Requirements
+
+  ~gitto~ requires [[http://www.gnu.org/software/guile/][GNU Guile]] version 2.0.9 or newer to be available.
+
+* Removal
+
+  If you're fed up with ~gitto~ and want it gone you can run:
+
+  : make uninstall
+
+  This will remove any ~gitto~ installed files from ~/usr/local/~. If you
+  used the =DESTDIR= variable during installation, you should give it
+  the same value here, like:
+
+  : make uninstall DESTDIR=/some/other/place
+
+  This will remove any ~gitto~ installed files from ~/some/other/place/~.
