@@ -1,6 +1,6 @@
 export DESTDIR ?= /usr
 
-dirs = src gitto
+dirs = src gitto zsh
 install-dirs = $(addprefix install-,$(dirs))
 uninstall-dirs = $(addprefix uninstall-,$(dirs))
 
