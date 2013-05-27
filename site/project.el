@@ -1,7 +1,13 @@
 (require 'org-publish)
 
 (setq org-publish-project-alist
-      '(("gitto-files"
+      '(("gitto-docs"
+         :base-directory "../doc/html"
+         :publishing-directory "_publish/manual"
+         :recursive t
+         :base-extension "html"
+         :publishing-function org-publish-attachment)
+        ("gitto-files"
          :base-directory "./"
          :publishing-directory "_publish/"
          :recursive nil
