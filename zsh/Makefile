@@ -1,6 +1,6 @@
 DESTDIR ?= /usr/local
 
-.PHONY: all install uninstall
+.PHONY: all install uninstall clean
 
 all:
 
@@ -9,3 +9,5 @@ install:
 
 uninstall:
 	rm -f $(DESTDIR)/share/zsh/site-functions/_gitto
+
+clean:

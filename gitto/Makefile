@@ -8,7 +8,8 @@ objects = config.scm config.go git.scm git.go ui.scm ui.go main.scm \
 install-objects = $(addprefix install-,$(objects))
 uninstall-objects = $(addprefix uninstall-,$(objects))
 
-.PHONY: all install $(install-objects) uninstall $(uninstall-objects)
+.PHONY: all install $(install-objects) uninstall $(uninstall-objects) \
+	clean
 
 all: $(filter %.go,$(objects))
 
@@ -29,3 +30,6 @@ $(filter %.go,$(uninstall-objects)): uninstall-%:
 
 $(filter %.scm,$(uninstall-objects)): uninstall-%:
 	rm -f "$(SITEDIR)/gitto/$*"
+
+clean:
+	rm -f *.go

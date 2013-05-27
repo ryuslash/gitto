@@ -8,7 +8,7 @@ objects = gitto-path.o
 
 all: libguile-gitto-path.so
 
-.PHONY: install uninstall
+.PHONY: install uninstall clean
 
 %.x: %.c
 	guile-snarf -o $@ $< $(CFLAGS)
@@ -26,3 +26,6 @@ install: install-gitto install-libguile-gitto-path
 uninstall:
 	rm -f ${DESTDIR}/bin/gitto
 	rm -f ${EXTDIR}/libguile-gitto-path.so
+
+clean:
+	rm -f *.o *.x *.so

@@ -4,7 +4,7 @@ TEXI2PDF = texi2pdf
 DVIPS = dvips
 
 .PHONY: all html dvi pdf ps install uninstall install-dvi install-pdf \
-	install-ps
+	install-ps clean
 
 all: gitto.info
 
@@ -51,3 +51,9 @@ gitto.pdf: gitto.texi
 
 gitto.ps: gitto.dvi
 	$(DVIPS) gitto.dvi
+
+clean:
+	rm -f gitto.aux gitto.cp gitto.dvi gitto.fn gitto.fns gitto.info \
+		gitto.ky gitto.log gitto.pdf gitto.pg gitto.ps gitto.toc \
+		gitto.tp gitto.vr gitto.vrs
+	rm -rf html/
