@@ -18,9 +18,9 @@ libguile-gitto-path.so: gitto-path.o
 	$(CC) $(CFLAGS) -shared -o libguile-gitto-path.so $^
 
 install-gitto: gitto
-	install -Dm 755 $^ ${DESTDIR}/bin/$^
+	$(INSTALL_PROGRAM) -m 755 $^ ${DESTDIR}/bin/$^
 install-libguile-gitto-path: libguile-gitto-path.so
-	install -Dm 755 $^ ${EXTDIR}/$^
+	$(INSTALL_PROGRAM) -m 755 $^ ${EXTDIR}/$^
 install: install-gitto install-libguile-gitto-path
 
 uninstall:

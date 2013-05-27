@@ -19,10 +19,10 @@ install: $(install-objects)
 uninstall: $(uninstall-objects)
 
 $(filter %.go,$(install-objects)): install-%: $(filter %.go,$(objects))
-	install -Dm 644 $* "$(COMPDIR)/gitto/$*"
+	$(INSTALL_DATA) $* "$(COMPDIR)/gitto/$*"
 
 $(filter %.scm,$(install-objects)): install-%:
-	install -Dm 644 $* "$(SITEDIR)/gitto/$*"
+	$(INSTALL_DATA) $* "$(SITEDIR)/gitto/$*"
 
 $(filter %.go,$(uninstall-objects)): uninstall-%:
 	rm -f "$(COMPDIR)/gitto/$*"

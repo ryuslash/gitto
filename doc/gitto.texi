@@ -1,0 +1,356 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename gitto.info
+@settitle Gitto
+@c %**end of header
+@copying
+Gitto User Manual.
+
+Copyright @copyright{} 2013  Tom Willemse
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
+A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
+
+A copy of the license is also available from the Free Software
+Foundation Web site at @url{http://www.gnu.org/licenses/fdl.html}.
+
+@end quotation
+
+The document was typeset with
+@uref{http://www.texinfo.org/, GNU Texinfo}.
+
+@end copying
+
+@titlepage
+@title Gitto
+@subtitle Gitto User Manual
+@author Tom Willemse <tom@@ryuslash.org>
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@dircategory Individual utilities
+@direntry
+* Gitto: (gitto).     Keep track of your git repositories.
+@end direntry
+
+@c Output the table of the contents at the beginning.
+@contents
+
+@ifnottex
+@node Top, Introduction, (dir), (dir)
+@top Gitto
+
+This is the manual for gitto. Gitto helps you keep track of the various
+git repositories you have stored on your hard-drive(s).
+
+@insertcopying
+@end ifnottex
+
+@c Generate the nodes for this menu with `C-c C-u C-m'.
+@menu
+* Introduction::
+* Usage::
+* Configuration::
+* Copying This Manual::
+* Index::
+@end menu
+
+@c Update all node entries with `C-c C-u C-n'.
+@c Insert new nodes with `C-c C-c n'.
+@node Introduction, Usage, Top, Top
+@chapter Introduction
+
+This chapter offers a few introductory sections that will explain why
+you might want to use gitto and how to get it running.
+
+@menu
+* Features::
+* Installation::
+@end menu
+
+@node Features, Installation, Introduction, Introduction
+@section Features
+
+gitto was started as a way to view the status of the repositories that
+were registered with it. It has since also gained somewhat of a
+management function.
+
+@itemize @bullet
+@item
+First, it allows you to see an overview of the status of your git
+repositories. For each registered repository it will show you the
+following information:
+
+@itemize @bullet
+@item
+The name of the repository. This is the directory name in which the
+repository is located.
+
+@item
+The state of the worktree, clean or dirty. Dirty meaning that there are
+uncommitted changes in the worktree.
+
+@item
+It shows the following information for each branch:
+
+@itemize
+@item
+The name of the branch.
+
+@item
+How many commits the local repository has that have not been pushed to
+the branch's upstream remote.
+
+@item
+How many commits the branch's upstream remote has that have not been
+merged into the local repository.
+
+@item
+How long ago the last known commit pushed to the branch's upstream
+remote was. If the branch has no upstream remote this will always be
+@dfn{Never}.
+@end itemize
+@end itemize
+
+@item
+It allows the user to specify a template of settings which can be merged
+with the registered repository's setting. This makes it easy to
+generalize your configuration.
+
+@item
+Along with specifying a template for configuration settings the user can
+also specify a list of repository names which should be excluded from
+the merging of settings. This is useful when you have a few repositories
+that you don't push to the same remotes or that have different needs for
+configuration, perhaps because they are forks or clones of someone
+else's project.
+
+@item
+It allows the user to specify a list of hooks which should be installed
+in the repositories. This also looks at the exclude list and will not
+install any hooks for projects in the exclude list. This is useful when
+you have hooks that all your projects use, for example a
+@file{commit-msg} hook that ensures correct style, or a
+@file{pre-commit} hook that ensures there are no errors being committed.
+@end itemize
+
+
+@node Installation,  , Features, Introduction
+@section Installation
+
+There is a package available for gitto in the
+@uref{https://aur.archlinux.org,Archlinux User Repository}@footnote{At
+https://aur.archlinux.org/packages/gitto-git/}.
+
+If you don't use Archlinux or you prefer installing it manually you
+should first grab the source from somewhere and then it is a matter of
+using:
+
+@example
+make
+@end example
+
+@noindent
+and then, as root:
+
+@example
+make install
+@end example
+
+@noindent
+or if you wish to install it somewhere other than in the default
+location:
+
+@example
+make install DESTDIR=/path/to/where/you/want/it
+@end example
+
+
+@node Usage, Configuration, Introduction, Top
+@chapter Usage
+
+In order to use gitto you should first register some repositories. To
+register a repository you can use the @command{add} command.
+
+@deffn Command add location
+This command checks if @var{location} contains a @file{.git} directory,
+which indicates it being a git repository, and registers @var{location}
+if so. Example:
+
+@example
+gitto add /path/to/your/project
+@end example
+@end deffn
+
+If ever you want to stop keeping track of the status of a repository,
+for example if you have given up on a project, you can use the
+@command{remove} command.
+
+@deffn Command remove location
+Remove @var{location} from the list of registered repositories. This
+first checks to see whether or not this repository has even been
+registered.
+@end deffn
+
+In the event you (re)move some of your repositories and don't have the
+energy to remove them all, there is also the @command{purge} command.
+
+@deffn Command purge
+Goes through all registered repositories and checks if they still exist
+in the given place. In the case that they don't they are removed from
+the registered repository list. This is useful when you have moved or
+deleted a number of repositories.
+@end deffn
+
+If you are ever unsure if you have registered a repository or not, you
+can always use the @command{check} command.
+
+@deffn Command check location
+Checks if @var{location} has been registered. Prints the result.
+@end deffn
+
+If you merely wish to know the locations of the repositories that have
+been registered you can use @command{list}'s @command{locations}
+sub-command.
+
+@deffn Command list
+This is the default command, equivalent to calling gitto without any
+commands specified. It has one sub-command: @command{locations}.
+
+@deffn Sub-Command locations
+This lists the absolute file names of the registered repositories.
+@end deffn
+@end deffn
+
+If you wish to manage your git configurations in a global way you can
+use the various @command{config} commands.
+
+@deffn Command config
+This command shows a list of all the configurations of all the
+registered repositories. It has a number of sub-commands with which you
+can manage your git configurations globally.
+
+@deffn Sub-Command global
+Shows the template configuration as it would look in a git configuration
+file format. Since it does not operate on any repository no name
+substitution is performed.
+@end deffn
+
+@deffn Sub-Command update
+Merge the template configuration with each repository's existing
+configuration. This adds settings and sections that weren't there before
+and overwrites settings that were. This is a destructive operation, so
+be sure your settings are correct.
+@end deffn
+
+@deffn Sub-Command hooks
+Install the hooks specified in the configuration file into each
+repository. Each hook is a symlink to the configured executable.
+@end deffn
+@end deffn
+
+Lastly, if you're confused about gitto, you can use the @command{help}
+command, and if you forgot which version of gitto you were using you can
+use the @command{version} command.
+
+@deffn Command help
+Shows a help message with a quick summary of all the available commands.
+@end deffn
+
+@deffn Command version
+Shows the version of gitto.
+@end deffn
+
+
+@node Configuration, Copying This Manual, Usage, Top
+@chapter Configuration
+
+gitto offers a few configuration options, mostly to do with git
+configuration management. The configuration is located at either
+@file{@env{XDG_CONFIG_HOME}/gitto/rc.scm} or
+@file{@env{HOME}/.config/gitto/rc.scm} depending on the existence of the
+@env{XDG_CONFIG_HOME} environment variable.
+
+@defopt global-config
+An alist of alists representing sections, variables and values which
+will be placed in each git repository's configuration file. It looks
+like this:
+
+@lisp
+((``@var{section}''
+  (``@var{variable}'' . ``@var{value}'')
+  (``@var{other-variable}'' ``@var{value1}'' ``@var{value2}'')))
+@end lisp
+
+A variable specification can have more than one value, but since gitto
+doesn't know or care which variables can and cannot have more than one
+value in git, it is up to the user to make sure they only use it with
+supported variables.
+
+Each value can have an @samp{~a} format specifier somewhere in their
+value, when merging configurations this will be replaced with the name
+of the repository for which the settings are being merged.
+
+An example configuration could be:
+
+@lisp
+(set! global-config
+      '((``remote \''origin\''``
+         (``url'' . ``git@@example.com:%a.git'')
+         (``pushurl'' ``git@@example.com:%a.git''
+                      ``git@@somehost.com:user/%a.git''))
+        (``branch \''master\''``
+         (``remote'' . ``origin''))))
+@end lisp
+
+This example either modifies or creates the @samp{origin} remote in each
+repository, setting the @samp{url} and @samp{pushurl} value and then
+adding another @samp{pushurl} setting. It also creates or modifies the
+@samp{master} branch, setting its @samp{remote} to the @samp{ryuslash}
+remote.
+@end defopt
+
+@defopt hook-alist
+An alist of @dfn{hook} and @dfn{executable} pairs. Each item in the list
+specifies a hook's name and the executable it should be linked to. An
+example configuration:
+
+@lisp
+(set! hook-alist
+      '((``commit-msg'' . ``/some/commit-msg/hook'')
+        (``pre-commit'' . ``/some/pre-commit/hook'')))
+@end lisp
+
+This will create symbolic links in the @file{.git/hooks} directories for
+each registered repository when calling @command{config hooks}. gitto
+doesn't know or care about which hooks exist, so it is up to the user to
+provide the correct names and look for typos.
+@end defopt
+
+@defopt config-exclusion-list
+A plain list of repository names to skip when merging configurations and
+installing hooks.
+@end defopt
+
+
+@node Copying This Manual, Index, Configuration, Top
+@appendix Copying This Manual
+
+@include fdl.texi
+
+@node Index,  , Copying This Manual, Top
+@unnumbered Index
+
+@printindex fn
+@printindex vr
+
+@bye
+
+@c gitto.texi ends here
