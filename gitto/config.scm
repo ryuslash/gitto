@@ -52,34 +52,38 @@
     lst))
 
 (define (merge-setting repo-name lst var val)
-  (assoc-set! lst var (format #f val repo-name)))
+  (if (list? val)
+      (assoc-set! lst var (map (lambda (v) (format #f v repo-name)) val))
+      (assoc-set! lst var (format #f val repo-name))))
 
 (define (merge-settings repo-name x y)
   (let ((lst (if x (list-copy x) '())))
     (for-each
      (lambda (v)
-       (if (list? v)
-           (begin
-             (set! lst (merge-setting repo-name lst (car v) (cadr v)))
-             (set! lst (append lst (map (lambda (s)
-                                          (cons (car v)
-                                                (format #f s repo-name)))
-                                        (cddr v)))))
-           (set! lst (merge-setting repo-name lst (car v) (cdr v)))))
+       (set! lst (merge-setting repo-name lst (car v) (cdr v))))
      y)
     lst))
 
-(define (parse-setting line)
+(define (split-setting line)
   (let ((idx (string-index line #\=)))
-    (list (cons (string-trim-both (substring line 0 idx))
-                (string-trim-both (substring line (1+ idx)))))))
+    (cons (string-trim-both (substring line 0 idx))
+          (string-trim-both (substring line (1+ idx))))))
+
+(define (read-setting settings line)
+  (let* ((new-setting (split-setting line))
+         (var (car new-setting)) (val (cdr new-setting))
+         (current-value (assoc-ref settings var)))
+    (if current-value
+        (if (list? current-value)
+            (assoc-set! settings var (append current-value (list val)))
+            (assoc-set! settings var (list current-value val)))
+        (assoc-set! settings var val))))
 
 (define (read-config repo-location)
   (let ((port (open-input-file
                (string-append repo-location "/.git/config")))
         (config '())
-        (current-section #f)
-        (assign-pos #f))
+        (current-section #f))
     (do ((line (read-line port) (read-line port)))
         ((eof-object? line))
       (cond ((string= line "[" 0 1)
@@ -89,8 +93,7 @@
                (set! current-section section)))
             ((string-contains line "=")
              (set-cdr! current-section
-                       (append (cdr current-section)
-                               (parse-setting line))))))
+                       (read-setting (cdr current-section) line)))))
     (close-port port)
     config))
 
@@ -105,4 +108,8 @@
   (for-each write-setting (cdr section)))
 
 (define (write-setting setting)
-  (format #t "~8t~a = ~a~%" (car setting) (cdr setting)))
+  (let ((value (cdr setting)))
+    (if (list? value)
+        (map (lambda (v)
+               (format #t "~8t~a = ~a~%" (car setting) v)) value)
+        (format #t "~8t~a = ~a~%" (car setting) (cdr setting)))))
