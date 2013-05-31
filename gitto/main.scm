@@ -32,6 +32,11 @@
 (define config-exclusion-list '())
 
 (define (storage-dir xdg-env fallback)
+  "Get the location where gitto stores information.
+
+XDG-ENV specifies which XDG environment variable should be looked at
+and FALLBACK specifies the directory to use if XDG-ENV has not been
+set in the current environment."
   (let ((xdg (getenv xdg-env)))
     (string-append
      (or xdg (getenv "HOME")) (if xdg "" fallback) "/gitto")))
@@ -168,9 +173,19 @@ gitto [command [arguments ...]]
 (set! command-list (append command-list `(("purge" . ,purge))))
 
 (define (show-global-config)
+  "Show the template specified in `global-config'."
   (write-config global-config))
 
 (define (show-config . args)
+  "Do something with the config module.
+
+If ARGS is an empty list, show each repository's current
+configuration. If the car of ARGS is `global' show the template
+specified in the user's init file. If the car of ARGS is `update'
+merge the specified template and each repository's configuration,
+excluding the repositories in `config-exclusion-list'. If the car of
+ARGS is `hooks' install configured hooks in each repository, excluding
+repositories in `config-exclusion-list'."
   (cond
    ((eq? args '())
     (for-each (lambda (repo)
@@ -190,6 +205,9 @@ gitto [command [arguments ...]]
 (set! command-list (append command-list `(("config" . ,show-config))))
 
 (define (update-repo-config repo)
+  "Merge the configured configuration with REPO's configuration.
+
+Don't do anything if REPO has been added to `config-exclusion-list'."
   (unless (member (repo-name repo) config-exclusion-list)
     (write-config
      (merge-config (repo-name repo)
@@ -198,6 +216,7 @@ gitto [command [arguments ...]]
      (string-append (repo-location repo) "/.git/config"))))
 
 (define (update-config)
+  "Merge the configured configuration with all repositories."
   (for-each update-repo-config repositories))
 
 (define (main args)

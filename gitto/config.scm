@@ -32,6 +32,7 @@
 (define hook-alist '())
 
 (define (install-hooks repo-location)
+  "Install each hook in `hook-alist' into REPO-LOCATION."
   (for-each
    (lambda (hook)
      (let ((new-name (string-append repo-location "/.git/hooks/"
@@ -41,6 +42,10 @@
    hook-alist))
 
 (define (merge-config repo-name x y)
+  "Merge configuration X with configuration Y.
+
+The values in configuration Y will have `%a' substituted with
+REPO-NAME."
   (let ((lst (if x (list-copy x) '())))
     (for-each
      (lambda (s)
@@ -52,11 +57,18 @@
     lst))
 
 (define (merge-setting repo-name lst var val)
+  "Merge VAL into LST under VAR, substituting `%a' with REPO-NAME.
+
+In case val is a list, all values in it have `%a' substituted with
+REPO-NAME."
   (if (list? val)
       (assoc-set! lst var (map (lambda (v) (format #f v repo-name)) val))
       (assoc-set! lst var (format #f val repo-name))))
 
 (define (merge-settings repo-name x y)
+  "Merge the settings in X with those in Y.
+
+During merging values in Y will have `%a' substituted with REPO-NAME."
   (let ((lst (if x (list-copy x) '())))
     (for-each
      (lambda (v)
@@ -65,11 +77,22 @@
     lst))
 
 (define (split-setting line)
+  "Split LINE into a cons cell.
+
+LINE should be a string which looks like `key=value'. The result is a
+cons cell with `(key . value)'."
   (let ((idx (string-index line #\=)))
     (cons (string-trim-both (substring line 0 idx))
           (string-trim-both (substring line (1+ idx))))))
 
 (define (read-setting settings line)
+  "Read and put the setting in LINE into SETTINGS.
+
+LINE should be a string which looks like `key=value'. The result is
+SETTINGS with either the setting in LINE added to it, the current
+value of the variable specified in LINE overwritten with the value in
+LINE or the value in LINE appended to the existing variable in
+SETTINGS."
   (let* ((new-setting (split-setting line))
          (var (car new-setting)) (val (cdr new-setting))
          (current-value (assoc-ref settings var)))
@@ -80,6 +103,10 @@
         (assoc-set! settings var val))))
 
 (define (read-config repo-location)
+  "Read the configuration for the git repository at REPO-LOCATION.
+
+This procedure returns an alist of `(SECTION-TITLE . SETTINGS)' cells
+where SETTINGS is an alist of `(VARIABLE . VALUE)' cells."
   (let ((port (open-input-file
                (string-append repo-location "/.git/config")))
         (config '())
@@ -104,10 +131,20 @@
         (thunk))))
 
 (define (write-section section)
+  "Output SECTION as a git config section.
+
+This prints SECTION's car as a section header and prints all the
+settings in SECTION's cdr."
   (format #t "[~a]~%" (car section))
   (for-each write-setting (cdr section)))
 
 (define (write-setting setting)
+  "Write SETTING to `standard-output'.
+
+SETTING should be a cons cell or a proper list. In the case of it
+being a proper list a key=value line will be printed for each item in
+the cdr of SETTING. In case of a cons cell where the cdr isn't a list
+just one line will be printed."
   (let ((value (cdr setting)))
     (if (list? value)
         (map (lambda (v)

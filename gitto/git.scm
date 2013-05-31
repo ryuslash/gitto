@@ -62,21 +62,27 @@
   (force (slot-ref branch 'updated)))
 
 (define (git-branches dir)
+  "Call git-branch and parse its output."
   (let ((pipe (start-git dir "branch")))
     (map
      (lambda (b) (string-trim-both b (char-set #\* #\space)))
      (string-split (string-trim-right (read-string pipe)) #\newline))))
 
 (define (git-clean? dir)
-  "Check whether a repository is clean, meaning there are no changes
-to the tracked files. Utracked files will not register."
+  "Check whether a repository is clean.
+
+Clean means there are no changes to the tracked files. Untracked files
+will not register."
   (let* ((pipe (start-git dir "status -suno"))
          (clean? (eof-object? (read-delimited "" pipe))))
     (close-pipe pipe)
     clean?))
 
 (define (git-dir? dir)
-  "Check whether or not DIR/.git exists."
+  "Check whether or not DIR is a git repository.
+
+DIR will be considered a git repository if it has a `.git'
+sub-directory."
   (let ((dir (string-append dir "/.git")))
     (if (file-exists? dir)
         (let ((dirstat (stat dir)))
@@ -84,7 +90,7 @@ to the tracked files. Utracked files will not register."
         #f)))
 
 (define (git-last-update dir branch)
-  "Check when the last update upstream was."
+  "Check when the last update in DIR of upstream for BRANCH was."
   (let* ((pipe (start-git
                 dir (format #f "log -1 --format=%ar ~a@{u}" branch)))
          (relative-last-update (read-line pipe)))
@@ -134,11 +140,17 @@ to the tracked files. Utracked files will not register."
           (branch-name branch) (branch-pushable branch)
           (branch-pullable branch) (branch-updated branch)))
 
+(define (repo-state-description repo)
+  "Return the state of REPO as either clean or dirty.
+
+REPO should be of type `<repository>' and the result is a string."
+  (if (repo-clean? repo) "clean" "dirty"))
+
 (define-method (print (repo <repository>))
   (if (file-exists? (repo-location repo))
       (begin
         (format #t "~a: Worktree is ~a~%" (repo-name repo)
-                (if (repo-clean? repo) "clean" "dirty"))
+                (repo-state-description repo))
         (for-each print (repo-branches repo))
         (newline))
       (format #t "~a:~15tnot found at ~s\n"
