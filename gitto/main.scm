@@ -28,6 +28,17 @@
   #:use-module (srfi srfi-1)
   #:export (main))
 
+(define-syntax define-command
+  (syntax-rules ()
+    ((_ (name . args)
+        exp exp* ...)
+     (begin
+       (set! command-list
+             (cons (cons (symbol->string (quote name))
+                         (lambda args
+                           exp exp* ...))
+                   command-list))))))
+
 (define command-list '())
 (define config-exclusion-list '())
 
@@ -46,7 +57,7 @@ set in the current environment."
 (define (data-dir) (storage-dir "XDG_DATA_HOME" "/.local/share"))
 (define (data-file file) (string-append (data-dir) "/" file))
 
-(define (version)
+(define-command (version)
   "Display version information."
   (display "gitto 0.1.0") (newline)
   (display "Copyright (C) 2012 Tom Willemse") (newline)
@@ -54,9 +65,8 @@ set in the current environment."
   (display "You may redistribute copies of this program") (newline)
   (display "under the terms of the GNU General Public License.") (newline)
   (display "For more information about these matters, see the file named COPYING.") (newline))
-(set! command-list (append command-list `(("version" . ,version))))
 
-(define (help)
+(define-command (help)
   "Display some help."
   (display "\
 gitto [command [arguments ...]]
@@ -74,7 +84,6 @@ gitto [command [arguments ...]]
   version              Display version
   help                 Display this help
 "))
-(set! command-list (append command-list `(("help" . ,help))))
 
 (define (known? repo)
   "Do we know REPO?"
@@ -99,14 +108,12 @@ gitto [command [arguments ...]]
     (write repos port)
     (close-port port)))
 
-(define (repository-registered? repository)
+(define-command (check repository)
   "Check to see if REPOSITORY has been registered."
   (format #t "Repository is~a registered~%"
           (if (known? repository) "" " not")))
-(set! command-list (append command-list
-                           `(("check" . ,repository-registered?))))
 
-(define (register-repository repository)
+(define-command (add repository)
   "Register REPOSITORY in the repository list."
   (set! repository (make <repository> (realpath repository)))
   (if (not (known? repository))
@@ -126,10 +133,8 @@ gitto [command [arguments ...]]
           (update-repo-config repository)))
       (display "Repository already registered."))
   (newline))
-(set! command-list (append command-list
-                           `(("add" . ,register-repository))))
 
-(define (remove-repository repository)
+(define-command (remove repository)
   "Remove/unregister REPOSITORY from the repository list."
   (unless (member repository repositories same-repository?)
     (set! repository (realpath repository)))
@@ -142,16 +147,12 @@ gitto [command [arguments ...]]
         (simple-format #t "Repository ~A removed." repository))
       (display "Not a registered repository."))
   (newline))
-(set! command-list (append command-list
-                           `(("remove" . ,remove-repository))))
 
-(define (list-repositories . args)
+(define-command (list . args)
   "List information about every repository."
   (if (and (not (eq? args '())) (equal? (car args) "locations"))
       (list-repository-locations)
       (for-each print repositories)))
-(set! command-list (append command-list
-                           `(("list" . ,list-repositories))))
 
 (define (list-repository-locations)
   "List the registered locations of repositories."
@@ -163,20 +164,19 @@ gitto [command [arguments ...]]
          (lambda (s1 s2)
            (string<? (repo-location s1) (repo-location s2))))))
 
-(define (purge)
+(define-command (purge)
   "Purge all items from the list that can no longer be found."
   (set! repositories
         (filter (lambda (repo)
                   (file-exists? (repo-location repo)))
                 repositories))
   (save-repositories-list))
-(set! command-list (append command-list `(("purge" . ,purge))))
 
 (define (show-global-config)
   "Show the template specified in `global-config'."
   (write-config global-config))
 
-(define (show-config . args)
+(define-command (config . args)
   "Do something with the config module.
 
 If ARGS is an empty list, show each repository's current
@@ -202,7 +202,6 @@ repositories in `config-exclusion-list'."
                 (unless (member (repo-name r) config-exclusion-list)
                   (install-hooks (repo-location r))))
               repositories))))
-(set! command-list (append command-list `(("config" . ,show-config))))
 
 (define (update-repo-config repo)
   "Merge the configured configuration with REPO's configuration.
