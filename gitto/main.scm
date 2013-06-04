@@ -34,9 +34,12 @@
         exp exp* ...)
      (begin
        (set! command-list
-             (cons (cons (symbol->string (quote name))
-                         (lambda args
-                           exp exp* ...))
+             (cons
+              (cons (symbol->string (quote name))
+                    (case-lambda
+                      (args
+                       exp exp* ...)
+                      (lst (format #t "Wrong number of arguments.~%"))))
                    command-list))))))
 
 (define command-list '())
