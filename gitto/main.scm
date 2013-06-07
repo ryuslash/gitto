@@ -31,16 +31,22 @@
 (define-syntax define-command
   (syntax-rules ()
     ((_ (name . args)
+        usage
+        longdoc
         exp exp* ...)
      (begin
        (set! command-list
              (cons
-              (cons (symbol->string (quote name))
-                    (case-lambda
+              (list (symbol->string (quote name))
+                    (cons
+                     #:function
+                     (case-lambda*
                       (args
                        exp exp* ...)
                       (lst (format #t "Wrong number of arguments.~%"))))
-                   command-list))))))
+                    (cons #:usage usage)
+                    (cons #:documentation longdoc))
+              command-list))))))
 
 (define command-list '())
 (define config-exclusion-list '())
@@ -62,6 +68,9 @@ set in the current environment."
 
 (define-command (version)
   "Display version information."
+  "Usage: gitto version
+
+Displays version and some copyright information."
   (display "gitto 0.1.0") (newline)
   (display "Copyright (C) 2012 Tom Willemse") (newline)
   (display "This program comes with ABSOLUTELY NO WARRANTY.") (newline)
@@ -69,24 +78,25 @@ set in the current environment."
   (display "under the terms of the GNU General Public License.") (newline)
   (display "For more information about these matters, see the file named COPYING.") (newline))
 
-(define-command (help)
-  "Display some help."
-  (display "\
-gitto [command [arguments ...]]
-  add                  Register a new repository directory
-  remove               Remove a repository directory
-  check                Check if a repository has been registered
-  list                 List all repositories and their status
-  list locations       List all registered repositories' locations
-  purge                Remove all repositories that don't exist
-  config               Show each repository's configuration
-  config global        Show template configuration
-  config update        Merge template configuration with each
-                       repository's configuration
-  config hooks         Install configured hooks for repositories
-  version              Display version
-  help                 Display this help
-"))
+(define-command (help #:optional command)
+  "Display this help."
+  "Usage: gitto help [COMMAND]
+
+Display a help message. If COMMAND is not specified, print some
+information about gitto, otherwise print some information about
+COMMAND."
+  (if command
+      (let ((command-spec (assoc-ref command-list command)))
+        (if command-spec
+            (format #t "~a~%" (assq-ref command-spec #:documentation))
+            (format #t "Unknown command: ~a~%" command)))
+      (begin
+        (display "gitto [command [arguments ...]]")
+        (newline)
+        (for-each
+         (lambda (cmd)
+           (format #t "  ~a~20t~a~%" (car cmd) (assq-ref cmd #:usage)))
+         command-list))))
 
 (define (known? repo)
   "Do we know REPO?"
@@ -112,12 +122,21 @@ gitto [command [arguments ...]]
     (close-port port)))
 
 (define-command (check repository)
-  "Check to see if REPOSITORY has been registered."
+  "Check to see if a repository has been registered."
+  "Usage: gitto check REPO
+
+Checks whether or not the git repository REPO has been registered with
+gitto."
   (format #t "Repository is~a registered~%"
           (if (known? repository) "" " not")))
 
 (define-command (add repository)
-  "Register REPOSITORY in the repository list."
+  "Register a repository."
+  "Usage: gitto add REPO
+
+Add REPO to the registered repository list. This command will fail if
+REPO does not indicate a git repository or if it has already been
+registered."
   (set! repository (make <repository> (realpath repository)))
   (if (not (known? repository))
       (begin
@@ -138,7 +157,12 @@ gitto [command [arguments ...]]
   (newline))
 
 (define-command (remove repository)
-  "Remove/unregister REPOSITORY from the repository list."
+  "Unregister a repository."
+  "Usage: gitto remove REPO
+
+Removes REPO from the registered repository list. This command will
+fail if REPO does not indicate a git repository of if it hasn't been
+registered."
   (unless (member repository repositories same-repository?)
     (set! repository (realpath repository)))
 
@@ -153,6 +177,16 @@ gitto [command [arguments ...]]
 
 (define-command (list . args)
   "List information about every repository."
+  "Usage: gitto list
+       gitto list locations
+
+The first form shows an overview of the status of your registered
+repositories and their branches. By default branches without changer
+aren't shown, but you can change this behaviour by setting the
+`show-unchanged-branches?' variable in your init file.
+
+The second form prints the location on your filesystem for each
+registered repository as absolute paths."
   (if (and (not (eq? args '())) (equal? (car args) "locations"))
       (list-repository-locations)
       (for-each print repositories)))
@@ -168,7 +202,11 @@ gitto [command [arguments ...]]
            (string<? (repo-location s1) (repo-location s2))))))
 
 (define-command (purge)
-  "Purge all items from the list that can no longer be found."
+  "Purge all registered repositories that can no longer be found."
+  "Usage: gitto purge
+
+Go through the list of registered repositories and remove all the ones
+which no longer point to a git repository."
   (set! repositories
         (filter (lambda (repo)
                   (file-exists? (repo-location repo)))
@@ -179,18 +217,28 @@ gitto [command [arguments ...]]
   "Show the template specified in `global-config'."
   (write-config global-config))
 
-(define-command (config . args)
-  "Do something with the config module.
+(define-command (config #:optional sub)
+  "Manage your repositories' configurations."
+  "Usage: gitto config
+       gitto config global
+       gitto config update
+       gitto config hooks
 
-If ARGS is an empty list, show each repository's current
-configuration. If the car of ARGS is `global' show the template
-specified in the user's init file. If the car of ARGS is `update'
-merge the specified template and each repository's configuration,
-excluding the repositories in `config-exclusion-list'. If the car of
-ARGS is `hooks' install configured hooks in each repository, excluding
-repositories in `config-exclusion-list'."
+The first form prints the configurations for each registered
+repository.
+
+The second form shows what your configured configuration template
+looks like as a git configuration file. This does not expand the `%a'
+format specifier which can be used to indicate the repository name.
+
+The third form merges the template in and existing configurations,
+overwriting settings when necessary. The repositories in the
+`config-exclusion-list' will be skipped. *Note:* This is a destructive
+operation, you should be mindful.
+
+The fourth form installs the configured hooks into each repository."
   (cond
-   ((eq? args '())
+   ((not sub)
     (for-each (lambda (repo)
                 (display (string-upcase (repo-name repo)))
                 (newline)
@@ -198,9 +246,9 @@ repositories in `config-exclusion-list'."
                 (newline)
                 (newline))
               repositories))
-   ((equal? (car args) "global") (show-global-config))
-   ((equal? (car args) "update") (update-config))
-   ((equal? (car args) "hooks")
+   ((equal? sub "global") (show-global-config))
+   ((equal? sub "update") (update-config))
+   ((equal? sub "hooks")
     (for-each (lambda (r)
                 (unless (member (repo-name r) config-exclusion-list)
                   (install-hooks (repo-location r))))
@@ -236,7 +284,8 @@ Don't do anything if REPO has been added to `config-exclusion-list'."
             (assoc-ref command-list
                        (car (if command? command-spec '("list"))))))
       (if command
-          (apply command (if command? (cdr command-spec) '()))
+          (apply (assq-ref command #:function)
+                 (if command? (cdr command-spec) '()))
           (format #t "Unknown command: ~a~%" (car command-spec))))))
 
 (define repositories-file (data-file "repos.scm"))
