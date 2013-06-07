@@ -339,6 +339,13 @@ A plain list of repository names to skip when merging configurations and
 installing hooks.
 @end defopt
 
+@defopt show-unchanged-branches?
+A boolean. If @code{#t} all branches will be shown no matter their
+state, if @code{#f} (the default) only those branches that either have
+commits to push or commits to pull will be shown in the output of the
+@samp{list} command.
+@end defopt
+
 
 @node Copying This Manual, Index, Configuration, Top
 @appendix Copying This Manual

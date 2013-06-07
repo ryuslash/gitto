@@ -22,6 +22,7 @@
   #:use-module (ice-9 popen)
   #:use-module (ice-9 rdelim)
   #:use-module (oop goops)
+  #:use-module (srfi srfi-1)
   #:export (<branch>
             <repository>
 
@@ -36,6 +37,8 @@
             repo-location
             repo-name
             same-repository?))
+
+(define show-unchanged-branches? #f)
 
 (define-generic print)
 (define-generic same-repository?)
@@ -136,9 +139,14 @@ sub-directory."
                            (git-branches dir))))))
 
 (define-method (print (branch <branch>))
-  (format #t "  ~a:~15t~d to push and ~d to pull. Last update: ~a~%"
-          (branch-name branch) (branch-pushable branch)
-          (branch-pullable branch) (branch-updated branch)))
+  (let ((pushable (branch-pushable branch))
+        (pullable (branch-pullable branch)))
+    (if (or show-unchanged-branches?
+            (> (+ pushable pullable) 0))
+        (format #t "  ~a:~15t~d to push and ~d to pull. Last update: ~a~%"
+                (branch-name branch) pushable pullable
+                (branch-updated branch))
+        #f)))
 
 (define (repo-state-description repo)
   "Return the state of REPO as either clean or dirty.
@@ -151,8 +159,9 @@ REPO should be of type `<repository>' and the result is a string."
       (begin
         (format #t "~a: Worktree is ~a~%" (repo-name repo)
                 (repo-state-description repo))
-        (for-each print (repo-branches repo))
-        (newline))
+        (when (any identity (map-in-order print (repo-branches repo)))
+          (newline))
+        #t)
       (format #t "~a:~15tnot found at ~s\n"
               (repo-name repo) (repo-location repo))))
 
