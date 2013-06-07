@@ -8,13 +8,16 @@ objects = config.scm config.go git.scm git.go ui.scm ui.go main.scm \
 install-objects = $(addprefix install-,$(objects))
 uninstall-objects = $(addprefix uninstall-,$(objects))
 
+warnings = unused-variable unused-toplevel unbound-variable \
+	arity-mismatch duplicate-case-datum bad-case-datum format
+
 .PHONY: all install $(install-objects) uninstall $(uninstall-objects) \
 	clean
 
 all: $(filter %.go,$(objects))
 
 $(filter %.go,$(objects)): %.go: %.scm
-	../env guild compile -o $@ $^
+	../env guild compile $(addprefix -W ,$(warnings)) -o $@ $^
 
 install: $(install-objects)
 uninstall: $(uninstall-objects)
