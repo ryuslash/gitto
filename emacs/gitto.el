@@ -4,7 +4,7 @@
 
 ;; Author: Tom Willemse <tom@ryuslash.org>
 ;; Keywords: convenience
-;; Package-Version: 0.2.0
+;; Package-Version: 0.2.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
   "Check if DIR is a registered repository."
   (not (string-match-p "not registered"
                        (shell-command-to-string
-                        (concat gitto-program " -c " dir)))))
+                        (concat gitto-program " check " dir)))))
 
 ;;;###autoload
 (defun gitto-register (dir)
@@ -53,7 +53,7 @@
   (unless dir
     (error "Not a git repository"))
 
-  (shell-command (concat gitto-program " -r " dir)))
+  (shell-command (concat gitto-program " add " dir)))
 
 ;;;###autoload
 (defun gitto-unregister (dir)
@@ -62,7 +62,7 @@
   (unless (and dir (gitto-registered-p dir))
     (error "Not a registered git repository"))
 
-  (shell-command (concat gitto-program " -R " dir)))
+  (shell-command (concat gitto-program " remove " dir)))
 
 (provide 'gitto)
 ;;; gitto.el ends here
