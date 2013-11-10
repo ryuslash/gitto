@@ -36,6 +36,7 @@
             repo-clean?
             repo-location
             repo-name
+            repository?
             same-repository?))
 
 (define show-unchanged-branches? #f)
@@ -54,6 +55,9 @@
   (location #:getter repo-location)
   (clean? #:getter repo-clean?)
   (branches #:getter repo-branches))
+
+(define (repository? repo)
+  (is-a? repo <repository>))
 
 (define-method (branch-pullable (branch <branch>))
   (force (slot-ref branch 'pullable)))
@@ -179,6 +183,9 @@ REPO should be of type `<repository>' and the result is a string."
 
 (define-method (same-repository? (x <string>) (y <repository>))
   (string= x (repo-location y)))
+
+(define-method (same-repository? x y)
+  #f)
 
 (define* (start-git dir args #:optional (extra ""))
   (open-input-pipe

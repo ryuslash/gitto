@@ -100,9 +100,12 @@ COMMAND."
 
 (define (known? repo)
   "Do we know REPO?"
-  (or (member repo repositories same-repository?)
-      (member (realpath (if (string? repo) repo (repo-location repo)))
-              repositories same-repository?)))
+  (and (or (repository? repo) (string? repo))
+       (or (member repo repositories same-repository?)
+           (member (realpath (if (string? repo)
+                                 repo
+                                 (repo-location repo)))
+                   repositories same-repository?))))
 
 (define (save-repositories-list)
   "Save the list of repositories."
