@@ -243,14 +243,20 @@ file format. Since it does not operate on any repository no name
 substitution is performed.
 @end deffn
 
-@deffn Sub-Command update
+@deffn Sub-Command update [location]
+If @var{location} is specified, operate on it, otherwise operate on
+all registered repositories not in the exclusion list.
+
 Merge the template configuration with each repository's existing
 configuration. This adds settings and sections that weren't there before
 and overwrites settings that were. This is a destructive operation, so
 be sure your settings are correct.
 @end deffn
 
-@deffn Sub-Command hooks
+@deffn Sub-Command hooks [location]
+If @var{location} is specified, operate on it, otherwise operate on
+all registered repositories not in the exclusion list.
+
 Install the hooks specified in the configuration file into each
 repository. Each hook is a symlink to the configured executable.
 @end deffn
