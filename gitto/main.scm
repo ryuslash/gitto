@@ -220,12 +220,12 @@ which no longer point to a git repository."
   "Show the template specified in `global-config'."
   (write-config global-config))
 
-(define-command (config #:optional sub)
+(define-command (config #:optional sub repository)
   "Manage your repositories' configurations."
   "Usage: gitto config
        gitto config global
-       gitto config update
-       gitto config hooks
+       gitto config update [repository]
+       gitto config hooks [repository]
 
 The first form prints the configurations for each registered
 repository.
@@ -236,10 +236,12 @@ format specifier which can be used to indicate the repository name.
 
 The third form merges the template in and existing configurations,
 overwriting settings when necessary. The repositories in the
-`config-exclusion-list' will be skipped. *Note:* This is a destructive
-operation, you should be mindful.
+`config-exclusion-list' will be skipped. If REPOSITORY is specified it
+only updates the configuration for that repository. *Note:* This is a
+destructive operation, you should be mindful.
 
-The fourth form installs the configured hooks into each repository."
+The fourth form installs the configured hooks into each repository or
+the given repository."
   (cond
    ((not sub)
     (for-each (lambda (repo)
@@ -250,12 +252,17 @@ The fourth form installs the configured hooks into each repository."
                 (newline))
               repositories))
    ((equal? sub "global") (show-global-config))
-   ((equal? sub "update") (update-config))
+   ((equal? sub "update") (update-config repository))
    ((equal? sub "hooks")
-    (for-each (lambda (r)
-                (unless (member (repo-name r) config-exclusion-list)
-                  (install-hooks (repo-location r))))
-              repositories))))
+    (let ((hookwrapper
+           (lambda (r)
+             (unless (member (repo-name r) config-exclusion-list)
+               (install-hooks (repo-location r))))))
+      (if repository
+          (if (known? repository)
+              (hookwrapper (make <repository> repository))
+              (format #t "Unknown repository: ~a~%" repository))
+          (for-each hookwrapper repositories))))))
 
 (define (update-repo-config repo)
   "Merge the configured configuration with REPO's configuration.
@@ -268,9 +275,13 @@ Don't do anything if REPO has been added to `config-exclusion-list'."
                    global-config)
      (string-append (repo-location repo) "/.git/config"))))
 
-(define (update-config)
+(define* (update-config #:optional repo)
   "Merge the configured configuration with all repositories."
-  (for-each update-repo-config repositories))
+  (if repo
+      (if (known? repo)
+          (update-repo-config (make <repository> repo))
+          (format #t "Unknown repository: ~a~%" repo))
+      (for-each update-repo-config repositories)))
 
 (define (main args)
   "Parse the command line options and run the appropriate functions."
