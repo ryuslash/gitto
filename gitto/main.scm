@@ -95,7 +95,7 @@ COMMAND."
         (newline)
         (for-each
          (lambda (cmd)
-           (format #t "  ~a~20t~a~%" (car cmd) (assq-ref cmd #:usage)))
+           (format #t "  ~a~15t~a~%" (car cmd) (assq-ref cmd #:usage)))
          command-list))))
 
 (define (known? repo)
