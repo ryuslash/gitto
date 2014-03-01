@@ -58,14 +58,21 @@ Displays version and some copyright information."
   (display "under the terms of the GNU General Public License.") (newline)
   (display "For more information about these matters, see the file named COPYING.") (newline))
 
+(define (registered? repo)
+  "Check if REPO has been registered."
+  (or (member repo repositories same-repository?)
+      (member (realpath (if (string? repo)
+                            repo
+                            (repo-location repo)))
+              repositories same-repository?)))
+
+(define (valid-repo? repo)
+  "Check if REPO is or could be made usable as a repository."
+  (or (repository? repo) (string? repo)))
+
 (define (known? repo)
   "Do we know REPO?"
-  (and (or (repository? repo) (string? repo))
-       (or (member repo repositories same-repository?)
-           (member (realpath (if (string? repo)
-                                 repo
-                                 (repo-location repo)))
-                   repositories same-repository?))))
+  (and (valid-repo? repo) (registered? repo)))
 
 (define (save-repositories-list)
   "Save the list of repositories."
