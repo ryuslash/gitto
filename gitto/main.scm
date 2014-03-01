@@ -43,13 +43,12 @@
 
 (define (list-repository-locations)
   "List the registered locations of repositories."
-  (for-each
-   (lambda (repo)
-     (display (repo-location repo))
-     (newline))
-   (sort repositories
-         (lambda (s1 s2)
-           (string<? (repo-location s1) (repo-location s2))))))
+  (for-each print-repository-location (sort repositories repository<?)))
+
+(define (print-repository-location repo)
+  "Print the location of REPO."
+  (display (repo-location repo))
+  (newline))
 
 (define (registered? repo)
   "Check if REPO has been registered."
