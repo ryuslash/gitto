@@ -18,6 +18,7 @@
 ;; along with gitto.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gitto main)
+  #:use-module (gitto command)
   #:use-module (gitto config)
   #:use-module (gitto git)
   #:use-module (gitto path)
@@ -28,27 +29,6 @@
   #:use-module (srfi srfi-1)
   #:export (main))
 
-(define-syntax define-command
-  (syntax-rules ()
-    ((_ (name . args)
-        usage
-        longdoc
-        exp exp* ...)
-     (begin
-       (set! command-list
-             (cons
-              (list (symbol->string (quote name))
-                    (cons
-                     #:function
-                     (case-lambda*
-                      (args
-                       exp exp* ...)
-                      (lst (format #t "Wrong number of arguments.~%"))))
-                    (cons #:usage usage)
-                    (cons #:documentation longdoc))
-              command-list))))))
-
-(define command-list '())
 (define config-exclusion-list '())
 
 (define (storage-dir xdg-env fallback)
@@ -80,10 +60,9 @@ Displays version and some copyright information."
 
 (define (print-command-help command)
   "Print the help message for COMMAND."
-  (let ((command-spec (assoc-ref command-list command)))
-    (if command-spec
-        (format #t "~a~%" (assq-ref command-spec #:documentation))
-        (format #t "Unknown command: ~a~%" command))))
+  (if (command? command)
+      (format #t "~a~%" (command-documentation command))
+      (format #t "Unknown command: ~a~%" command)))
 
 (define (print-short-command-help command)
   "Print COMMAND's name and its short description."
@@ -93,7 +72,7 @@ Displays version and some copyright information."
   "Print the general help message for gitto."
   (display "gitto [command [arguments ...]]")
   (newline)
-  (for-each print-short-command-help command-list))
+  (for-each-command print-short-command-help))
 
 (define-command (help #:optional command)
   "Display this help."
@@ -305,13 +284,11 @@ Don't do anything if REPO has been added to `config-exclusion-list'."
          (primitive-load cfg))))
 
     (let* ((command-spec (cdr (member "gitto" args string-suffix?)))
-           (command? (not (eq? command-spec '())))
-           (command
-            (assoc-ref command-list
-                       (car (if command? command-spec '("list"))))))
-      (if command
-          (apply (assq-ref command #:function)
-                 (if command? (cdr command-spec) '()))
+           (command-specified? (not (eq? command-spec '())))
+           (command (car (if command-specified? command-spec '("list")))))
+      (if (command? command)
+          (apply (command-function command)
+                 (if command-specified? (cdr command-spec) '()))
           (format #t "Unknown command: ~a~%" (car command-spec))))))
 
 (define repositories-file (data-file "repos.scm"))
