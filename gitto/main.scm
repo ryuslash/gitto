@@ -228,10 +228,7 @@ registered repository as absolute paths."
 
 Go through the list of registered repositories and remove all the ones
 which no longer point to a git repository."
-  (set! repositories
-        (filter (lambda (repo)
-                  (file-exists? (repo-location repo)))
-                repositories))
+  (set! repositories (filter repository-location-exists? repositories))
   (save-repositories-list))
 
 (define-command (remove repository)

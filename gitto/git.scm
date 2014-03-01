@@ -38,6 +38,7 @@
             repo-name
             repository?
             repository-location<?
+            repository-location-exists?
             repository-name<?
             same-repository?))
 
@@ -64,6 +65,10 @@
 (define (repository-location<? repo1 repo2)
   "Compary REPO1 and REPO2 to see if REPO1 should be considered less."
   (string<? (repo-location repo1) (repo-location repo2)))
+
+(define (repository-location-exists? repo)
+  "Check to see if REPO's location exists."
+  (file-exists? (repo-location repo)))
 
 (define (repository-name<? repo1 repo2)
   "Compare REPO1 and REPO2 to see if REPO1 should be considered less."
