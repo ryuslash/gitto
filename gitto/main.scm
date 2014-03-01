@@ -29,22 +29,27 @@
   #:use-module (srfi srfi-1)
   #:export (main))
 
-(define config-exclusion-list '())
-
-(define (storage-dir xdg-env fallback)
-  "Get the location where gitto stores information.
-
-XDG-ENV specifies which XDG environment variable should be looked at
-and FALLBACK specifies the directory to use if XDG-ENV has not been
-set in the current environment."
-  (let ((xdg (getenv xdg-env)))
-    (string-append
-     (or xdg (getenv "HOME")) (if xdg "" fallback) "/gitto")))
-
 (define (config-dir) (storage-dir "XDG_CONFIG_HOME" "/.config"))
+
 (define (config-file file) (string-append (config-dir) "/" file))
+
 (define (data-dir) (storage-dir "XDG_DATA_HOME" "/.local/share"))
+
 (define (data-file file) (string-append (data-dir) "/" file))
+
+(define (known? repo)
+  "Do we know REPO?"
+  (and (valid-repo? repo) (registered? repo)))
+
+(define (list-repository-locations)
+  "List the registered locations of repositories."
+  (for-each
+   (lambda (repo)
+     (display (repo-location repo))
+     (newline))
+   (sort repositories
+         (lambda (s1 s2)
+           (string<? (repo-location s1) (repo-location s2))))))
 
 (define (registered? repo)
   "Check if REPO has been registered."
@@ -53,14 +58,6 @@ set in the current environment."
                             repo
                             (repo-location repo)))
               repositories same-repository?)))
-
-(define (valid-repo? repo)
-  "Check if REPO is or could be made usable as a repository."
-  (or (repository? repo) (string? repo)))
-
-(define (known? repo)
-  "Do we know REPO?"
-  (and (valid-repo? repo) (registered? repo)))
 
 (define (save-repositories-list)
   "Save the list of repositories."
@@ -79,19 +76,27 @@ set in the current environment."
     (write repos port)
     (close-port port)))
 
-(define (list-repository-locations)
-  "List the registered locations of repositories."
-  (for-each
-   (lambda (repo)
-     (display (repo-location repo))
-     (newline))
-   (sort repositories
-         (lambda (s1 s2)
-           (string<? (repo-location s1) (repo-location s2))))))
-
 (define (show-global-config)
   "Show the template specified in `global-config'."
   (write-config global-config))
+
+(define (storage-dir xdg-env fallback)
+  "Get the location where gitto stores information.
+
+XDG-ENV specifies which XDG environment variable should be looked at
+and FALLBACK specifies the directory to use if XDG-ENV has not been
+set in the current environment."
+  (let ((xdg (getenv xdg-env)))
+    (string-append
+     (or xdg (getenv "HOME")) (if xdg "" fallback) "/gitto")))
+
+(define* (update-config #:optional repo)
+  "Merge the configured configuration with all repositories."
+  (if repo
+      (if (known? repo)
+          (update-repo-config (make <repository> repo))
+          (format #t "Unknown repository: ~a~%" repo))
+      (for-each update-repo-config repositories)))
 
 (define (update-repo-config repo)
   "Merge the configured configuration with REPO's configuration.
@@ -104,31 +109,11 @@ Don't do anything if REPO has been added to `config-exclusion-list'."
                    global-config)
      (string-append (repo-location repo) "/.git/config"))))
 
-(define* (update-config #:optional repo)
-  "Merge the configured configuration with all repositories."
-  (if repo
-      (if (known? repo)
-          (update-repo-config (make <repository> repo))
-          (format #t "Unknown repository: ~a~%" repo))
-      (for-each update-repo-config repositories)))
+(define (valid-repo? repo)
+  "Check if REPO is or could be made usable as a repository."
+  (or (repository? repo) (string? repo)))
 
-(define (main args)
-  "Parse the command line options and run the appropriate functions."
-  (let ((cfg (config-file "rc.scm")))
-    (when (file-exists? cfg)
-      (save-module-excursion
-       (lambda ()
-         (set-current-module (resolve-module '(gitto main)))
-         (primitive-load cfg))))
-
-    (let* ((command-spec (cdr (member "gitto" args string-suffix?)))
-           (command-specified? (not (eq? command-spec '())))
-           (command (car (if command-specified? command-spec '("list")))))
-      (if (command? command)
-          (apply (command-function command)
-                 (if command-specified? (cdr command-spec) '()))
-          (format #t "Unknown command: ~a~%" (car command-spec))))))
-
+(define config-exclusion-list '())
 (define repositories-file (data-file "repos.scm"))
 
 (define repositories
@@ -280,3 +265,20 @@ Displays version and some copyright information."
   (display "You may redistribute copies of this program") (newline)
   (display "under the terms of the GNU General Public License.") (newline)
   (display "For more information about these matters, see the file named COPYING.") (newline))
+
+(define (main args)
+  "Parse the command line options and run the appropriate functions."
+  (let ((cfg (config-file "rc.scm")))
+    (when (file-exists? cfg)
+      (save-module-excursion
+       (lambda ()
+         (set-current-module (resolve-module '(gitto main)))
+         (primitive-load cfg))))
+
+    (let* ((command-spec (cdr (member "gitto" args string-suffix?)))
+           (command-specified? (not (eq? command-spec '())))
+           (command (car (if command-specified? command-spec '("list")))))
+      (if (command? command)
+          (apply (command-function command)
+                 (if command-specified? (cdr command-spec) '()))
+          (format #t "Unknown command: ~a~%" (car command-spec))))))
