@@ -46,6 +46,14 @@
   (for-each print-repository-location
             (sort repositories repository-location<?)))
 
+(define (print-config repo)
+  "Print the configuration for REPO."
+  (display (string-upcase (repo-name repo)))
+  (newline)
+  (write-config (read-config (repo-location repo)))
+  (newline)
+  (newline))
+
 (define (print-repository-location repo)
   "Print the location of REPO."
   (display (repo-location repo))
@@ -175,14 +183,7 @@ overwriting settings when necessary. The repositories in the
 only updates the configuration for that repository. *Note:* This is a
 destructive operation, you should be mindful."
   (cond
-   ((not sub)
-    (for-each (lambda (repo)
-                (display (string-upcase (repo-name repo)))
-                (newline)
-                (write-config (read-config (repo-location repo)))
-                (newline)
-                (newline))
-              repositories))
+   ((not sub) (for-each print-config repositories))
    ((equal? sub "global") (show-global-config))
    ((equal? sub "update") (update-config repository))))
 
