@@ -19,11 +19,11 @@
 
 (define-module (gitto main)
   #:use-module (gitto command)
+  #:use-module (gitto commands help)
   #:use-module (gitto config)
   #:use-module (gitto git)
   #:use-module (gitto path)
   #:use-module (gitto ui)
-  #:use-module (ice-9 format)
   #:use-module (ice-9 popen)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
@@ -57,33 +57,6 @@ Displays version and some copyright information."
   (display "You may redistribute copies of this program") (newline)
   (display "under the terms of the GNU General Public License.") (newline)
   (display "For more information about these matters, see the file named COPYING.") (newline))
-
-(define (print-command-help command)
-  "Print the help message for COMMAND."
-  (if (command? command)
-      (format #t "~a~%" (command-documentation command))
-      (format #t "Unknown command: ~a~%" command)))
-
-(define (print-short-command-help command)
-  "Print COMMAND's name and its short description."
-  (format #t "  ~a~15t~a~%" (car command) (assq-ref command #:usage)))
-
-(define (print-general-help)
-  "Print the general help message for gitto."
-  (display "gitto [command [arguments ...]]")
-  (newline)
-  (for-each-command print-short-command-help))
-
-(define-command (help #:optional command)
-  "Display this help."
-  "Usage: gitto help [COMMAND]
-
-Display a help message. If COMMAND is not specified, print some
-information about gitto, otherwise print some information about
-COMMAND."
-  (if command
-      (print-command-help command)
-      (print-general-help)))
 
 (define (known? repo)
   "Do we know REPO?"

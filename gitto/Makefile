@@ -4,7 +4,8 @@ SITEDIR = $(shell pkg-config guile-2.0 --variable=sitedir \
 COMPDIR = $(DESTDIR)/lib/guile/2.0/site-ccache
 
 objects = command.scm command.go config.scm config.go git.scm git.go \
-	ui.scm ui.go path.scm path.go main.scm main.go
+	ui.scm ui.go path.scm path.go commands/help.scm commands/help.go \
+	main.scm main.go
 install-objects = $(addprefix install-,$(objects))
 uninstall-objects = $(addprefix uninstall-,$(objects))
 
