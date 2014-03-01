@@ -29,6 +29,12 @@
   #:use-module (srfi srfi-1)
   #:export (main))
 
+(define (canonicalize-filename path)
+  "Get a canonicalized name for PATH, unless it's already familiar."
+  (if (member path repositories same-repository?)
+      path
+      (realpath path)))
+
 (define (config-dir) (storage-dir "XDG_CONFIG_HOME" "/.config"))
 
 (define (config-file file) (string-append (config-dir) "/" file))
@@ -71,6 +77,12 @@
                             repo
                             (repo-location repo)))
               repositories same-repository?)))
+
+(define (remove-repository repository)
+  "Remove REPOSITORY from the list of known repositories."
+  (set! repositories
+        (delete repository repositories same-repository?))
+  (save-repositories-list))
 
 (define (save-repositories-list)
   "Save the list of repositories."
@@ -238,14 +250,11 @@ which no longer point to a git repository."
 Removes REPO from the registered repository list. This command will
 fail if REPO does not indicate a git repository of if it hasn't been
 registered."
-  (unless (member repository repositories same-repository?)
-    (set! repository (realpath repository)))
+  (set! repository (canonicalize-filename repository))
 
   (if (known? repository)
       (begin
-        (set! repositories
-              (delete repository repositories same-repository?))
-        (save-repositories-list)
+        (remove-repository repository)
         (simple-format #t "Repository ~A removed." repository))
       (display "Not a registered repository."))
   (newline))
