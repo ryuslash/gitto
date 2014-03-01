@@ -17,6 +17,15 @@
 ;; along with gitto.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gitto path)
-  #:export (realpath))
+  #:export (realpath
+            ensure-directory-exists.))
 
 (load-extension "libguile-gitto-path" "init_gitto")
+
+(define (ensure-directory-exists. path)
+  "Make sure PATH exists.
+
+Check if PATH exists, and if so do nothing. If PATH doesn't exist,
+create it."
+  (unless (file-exists? path)
+    (mkdir path)))

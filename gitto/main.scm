@@ -43,7 +43,8 @@
 
 (define (list-repository-locations)
   "List the registered locations of repositories."
-  (for-each print-repository-location (sort repositories repository<?)))
+  (for-each print-repository-location
+            (sort repositories repository-location<?)))
 
 (define (print-repository-location repo)
   "Print the location of REPO."
@@ -60,20 +61,10 @@
 
 (define (save-repositories-list)
   "Save the list of repositories."
-  (let ((dir (data-dir)))
-    (unless (file-exists? dir)
-      (mkdir dir)))
-
+  (ensure-directory-exists. (data-dir))
   ;; Sort first
-  (set! repositories
-        (sort repositories
-              (lambda (s1 s2)
-                (string<? (repo-name s1) (repo-name s2)))))
-
-  (let ((port (open-output-file repositories-file))
-        (repos (map repo-location repositories)))
-    (write repos port)
-    (close-port port)))
+  (set! repositories (sort repositories repository-name<?))
+  (write-repositories!))
 
 (define (show-global-config)
   "Show the template specified in `global-config'."
@@ -111,6 +102,13 @@ Don't do anything if REPO has been added to `config-exclusion-list'."
 (define (valid-repo? repo)
   "Check if REPO is or could be made usable as a repository."
   (or (repository? repo) (string? repo)))
+
+(define (write-repositories!)
+  "Write the repositories to the repositories file."
+  (let ((port (open-output-file repositories-file))
+        (repos (map repo-location repositories)))
+    (write repos port)
+    (close-port port)))
 
 (define config-exclusion-list '())
 (define repositories-file (data-file "repos.scm"))
