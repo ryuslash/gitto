@@ -78,6 +78,23 @@ Displays version and some copyright information."
   (display "under the terms of the GNU General Public License.") (newline)
   (display "For more information about these matters, see the file named COPYING.") (newline))
 
+(define (print-command-help command)
+  "Print the help message for COMMAND."
+  (let ((command-spec (assoc-ref command-list command)))
+    (if command-spec
+        (format #t "~a~%" (assq-ref command-spec #:documentation))
+        (format #t "Unknown command: ~a~%" command))))
+
+(define (print-short-command-help command)
+  "Print COMMAND's name and its short description."
+  (format #t "  ~a~15t~a~%" (car command) (assq-ref command #:usage)))
+
+(define (print-general-help)
+  "Print the general help message for gitto."
+  (display "gitto [command [arguments ...]]")
+  (newline)
+  (for-each print-short-command-help command-list))
+
 (define-command (help #:optional command)
   "Display this help."
   "Usage: gitto help [COMMAND]
@@ -86,17 +103,8 @@ Display a help message. If COMMAND is not specified, print some
 information about gitto, otherwise print some information about
 COMMAND."
   (if command
-      (let ((command-spec (assoc-ref command-list command)))
-        (if command-spec
-            (format #t "~a~%" (assq-ref command-spec #:documentation))
-            (format #t "Unknown command: ~a~%" command)))
-      (begin
-        (display "gitto [command [arguments ...]]")
-        (newline)
-        (for-each
-         (lambda (cmd)
-           (format #t "  ~a~15t~a~%" (car cmd) (assq-ref cmd #:usage)))
-         command-list))))
+      (print-command-help command)
+      (print-general-help)))
 
 (define (known? repo)
   "Do we know REPO?"
