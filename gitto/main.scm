@@ -52,6 +52,15 @@
   (for-each print-repository-location
             (sort repositories repository-location<?)))
 
+(define (load-rc)
+  "Load the RC file for user customizations."
+  (let ((cfg (config-file "rc.scm")))
+    (when (file-exists? cfg)
+      (save-module-excursion
+       (lambda ()
+         (set-current-module (resolve-module '(gitto main)))
+         (primitive-load cfg))))))
+
 (define (maybe-install-hooks. repo)
   "Install hooks for REPO unless it's excluded."
   (unless (member (repo-name repo) config-exclusion-list)
@@ -273,17 +282,12 @@ Displays version and some copyright information."
 
 (define (main args)
   "Parse the command line options and run the appropriate functions."
-  (let ((cfg (config-file "rc.scm")))
-    (when (file-exists? cfg)
-      (save-module-excursion
-       (lambda ()
-         (set-current-module (resolve-module '(gitto main)))
-         (primitive-load cfg))))
+  (load-rc)
 
-    (let* ((command-spec (cdr (member "gitto" args string-suffix?)))
-           (command-specified? (not (eq? command-spec '())))
-           (command (car (if command-specified? command-spec '("list")))))
-      (if (command? command)
-          (apply (command-function command)
-                 (if command-specified? (cdr command-spec) '()))
-          (format #t "Unknown command: ~a~%" (car command-spec))))))
+  (let* ((command-spec (cdr (member "gitto" args string-suffix?)))
+         (command-specified? (not (eq? command-spec '())))
+         (command (car (if command-specified? command-spec '("list")))))
+    (if (command? command)
+        (apply (command-function command)
+               (if command-specified? (cdr command-spec) '()))
+        (format #t "Unknown command: ~a~%" (car command-spec)))))
