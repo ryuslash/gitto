@@ -46,6 +46,11 @@
   (for-each print-repository-location
             (sort repositories repository-location<?)))
 
+(define (maybe-install-hooks. repo)
+  "Install hooks for REPO unless it's excluded."
+  (unless (member (repo-name repo) config-exclusion-list)
+    (install-hooks (repo-location repo))))
+
 (define (print-config repo)
   "Print the configuration for REPO."
   (display (string-upcase (repo-name repo)))
@@ -195,15 +200,11 @@ Installs the configured hooks into each repository or the given
 repository."
   (cond
    ((equal? sub "init")
-    (let ((hookwrapper
-           (lambda (r)
-             (unless (member (repo-name r) config-exclusion-list)
-               (install-hooks (repo-location r))))))
-      (if repository
-          (if (known? repository)
-              (hookwrapper (make <repository> repository))
-              (format #t "Unknown repository: ~a~%" repository))
-          (for-each hookwrapper repositories))))))
+    (if repository
+        (if (known? repository)
+            (maybe-install-hooks. (make <repository> repository))
+            (format #t "Unknown repository: ~a~%" repository))
+        (for-each maybe-install-hooks. repositories)))))
 
 (define-command (list . args)
   "List information about every repository."
