@@ -87,11 +87,34 @@
                             (repo-location repo)))
               repositories same-repository?)))
 
+(define (remove-one-repository repos)
+  "Remove one repository from those in REPOS.
+
+In case REPOS only contains one repository, remove it. Otherwise ask
+the user to choose one and remove the chosen repository."
+  (if (> (length repos) 1)
+      (let* ((prompt
+              "Which of the following repositories would you like to remove?")
+             (location (repo-location (choose repos prompt repo-location))))
+        (when location (remove-repository-by-location location)))
+      (remove-repository-by-location (repo-location (car repos)))))
+
 (define (remove-repository repository)
   "Remove REPOSITORY from the list of known repositories."
   (set! repositories
         (delete repository repositories same-repository?))
   (save-repositories-list))
+
+(define (remove-repository-by-location location)
+  "Look for a repository in LOCATION and try to remove it."
+  (set! location (canonicalize-filename location))
+
+  (if (known? location)
+      (begin
+        (remove-repository location)
+        (simple-format #t "Repository ~A removed." location))
+      (display "Not a registered repository."))
+  (newline))
 
 (define (save-repositories-list)
   "Save the list of repositories."
@@ -258,15 +281,19 @@ which no longer point to a git repository."
 
 Removes REPO from the registered repository list. This command will
 fail if REPO does not indicate a git repository of if it hasn't been
-registered."
-  (set! repository (canonicalize-filename repository))
+registered.
 
-  (if (known? repository)
-      (begin
-        (remove-repository repository)
-        (simple-format #t "Repository ~A removed." repository))
-      (display "Not a registered repository."))
-  (newline))
+REPO should either be the name of a repository as displayed by the
+`list' command, or should be a absolute or relative path to a
+registered location. In case REPO is just a name and there is more
+than one repository with that name you are given a choice between the
+possible options."
+  (let ((results (filter (lambda (repo)
+                           (repository-name=? repo repository))
+                         repositories)))
+    (if (null? results)
+        (remove-repository-by-location repository)
+        (remove-one-repository results))))
 
 (define-command (version)
   "Display version information."

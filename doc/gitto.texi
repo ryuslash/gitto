@@ -197,6 +197,15 @@ for example if you have given up on a project, you can use the
 Remove @var{location} from the list of registered repositories. This
 first checks to see whether or not this repository has even been
 registered.
+
+@var{location} may be either an absolute or relative path, or it may
+also be the name of a repository as displayed by @command{list}.
+
+In case a name is specified and there are multiple possibilities a
+list will be presented to you and you may choose which of the
+repositories to remove based on the locations of each repository. The
+question will be repeated until a valid answer is given (a number
+appearing in the printed list).
 @end deffn
 
 In the event you (re)move some of your repositories and don't have the

@@ -40,6 +40,7 @@
             repository-location<?
             repository-location-exists?
             repository-name<?
+            repository-name=?
             same-repository?))
 
 (define show-unchanged-branches? #f)
@@ -73,6 +74,10 @@
 (define (repository-name<? repo1 repo2)
   "Compare REPO1 and REPO2 to see if REPO1 should be considered less."
   (string<? (repo-name repo1) (repo-name repo2)))
+
+(define (repository-name=? repo name)
+  "Company the name of REPO1 to NAME and determine equality."
+  (string= (repo-name repo) name))
 
 (define-method (branch-pullable (branch <branch>))
   (force (slot-ref branch 'pullable)))

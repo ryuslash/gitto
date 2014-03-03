@@ -17,8 +17,11 @@
 ;; along with gitto.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gitto ui)
+  #:use-module (ice-9 format)
+  #:use-module (ice-9 i18n)
   #:use-module (ice-9 rdelim)
-  #:export (y-or-n?))
+  #:export (y-or-n?
+            choose))
 
 (define* (y-or-n? prompt #:key (default #f))
   (format #t "~a [~a] " prompt (if default "Y/n" "y/N"))
@@ -35,3 +38,25 @@
        (display "Invalid response, please use `y' or `n'.")
        (newline)
        (y-or-n? prompt #:default default)))))
+
+(define* (choose collection prompt #:optional (key identity))
+  "Ask the user to choose one of COLLECTION.
+
+PROMPT is the question to ask the user and KEY is the function to use
+to present the options to the user."
+  (format #t "~a~%~%Choose one:~%~%" prompt)
+
+  (do ((idx 1 (1+ idx))
+       (cll collection (cdr cll)))
+      ((null? cll))
+    (format #t "~3d. ~a~%" idx (key (car cll))))
+
+  (newline)
+  (display "Your Choice: ")
+
+  (let ((response (locale-string->integer (read-line))))
+    (if (and response (<= 1 response (length collection)))
+        (list-ref collection (1- response))
+        (begin
+          (format #t "Improper response.~%")
+          (choose collection prompt key)))))
