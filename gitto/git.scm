@@ -31,6 +31,7 @@
             branch-pushable
             branch-updated
             git-dir?
+            git-push
             print
             repo-branches
             repo-clean?
@@ -143,6 +144,12 @@ sub-directory."
          (num (string->number (read-line pipe))))
     (close-pipe pipe)
     num))
+
+(define (git-push repository)
+  "Try to push REPOSITORY to its default upstream."
+  (let* ((pipe (start-git (repo-location repository)
+                          (format #f "push --all"))))
+    (close-pipe pipe)))
 
 (define-method (initialize (branch <branch>) args)
   (let ((name (car args))

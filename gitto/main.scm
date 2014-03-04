@@ -116,6 +116,10 @@ the user to choose one and remove the chosen repository."
       (display "Not a registered repository."))
   (newline))
 
+(define (repositories-by-name name)
+  "Get the repositories identified by NAME."
+  (filter (lambda (repo) (repository-name=? repo name)) repositories))
+
 (define (save-repositories-list)
   "Save the list of repositories."
   (ensure-directory-exists. (data-dir))
@@ -275,6 +279,34 @@ which no longer point to a git repository."
   (set! repositories (filter repository-location-exists? repositories))
   (save-repositories-list))
 
+(define-command (push #:optional repository)
+  "Push all or the specified repository to its default upstream."
+  "Usage: gitto push [repository]
+
+Go through the list of registered repositories and push all the ones
+with changes to their default upstream. If REPOSITORY has been
+specified just try to push that repository regardless of status."
+  (define (push-and-report repo)
+    (if (git-push repo)
+        (format #t "Succesfully pushed ~a~%" (repo-name repo))
+        (format #f "Pushing ~a failed~%" (repo-name repo))))
+
+  (if repository
+      (let* ((repositories-by-name (repositories-by-name repository))
+             (results (length repositories-by-name))
+             (repo #f))
+        (when (> results 0)
+          (set! repo
+                (if (= results 1)
+                    (car repositories-by-name)
+                    (choose repositories-by-name
+                            "Push to which repository?" repo-location))))
+
+        (if (or (> results 0) (known? repository))
+            (push-and-report (or repo (make <repository> repository)))
+            (format #t "Unknown repository: ~a~%" repository)))
+      (for-each push-and-report repositories)))
+
 (define-command (remove repository)
   "Unregister a repository."
   "Usage: gitto remove REPO
@@ -288,9 +320,7 @@ REPO should either be the name of a repository as displayed by the
 registered location. In case REPO is just a name and there is more
 than one repository with that name you are given a choice between the
 possible options."
-  (let ((results (filter (lambda (repo)
-                           (repository-name=? repo repository))
-                         repositories)))
+  (let ((results (repositories-by-name repository)))
     (if (null? results)
         (remove-repository-by-location repository)
         (remove-one-repository results))))
