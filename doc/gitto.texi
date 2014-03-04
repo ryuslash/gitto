@@ -271,6 +271,23 @@ repository. Each hook is a symlink to the configured executable.
 @end deffn
 @end deffn
 
+In case you can't be bothered to go to whichever location you need to
+go to in order to push a repository, or have a bunch of repositories
+which all need a push, you can use the @command{push} command.
+
+@deffn Command push [repository]
+Pushes all branches of all repositories to their default upstream by
+using
+
+@example
+git push -all
+@end example
+
+@noindent
+on each registered repository. If @var{repository} has been specified,
+call it only on that repository.
+@end deffn
+
 Lastly, if you're confused about gitto, you can use the @command{help}
 command, and if you forgot which version of gitto you were using you can
 use the @command{version} command.
