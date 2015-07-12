@@ -52,7 +52,7 @@
 ** run-gitto
 
    It is not strictly necessary to install gitto, I have added a
-   utility to run it straight from je project directory, although
+   utility to run it straight from the project directory, although
    mostly for testing purposes.
 
    Using ~run-gitto~ works exactly the same as using ~gitto~ when it is
