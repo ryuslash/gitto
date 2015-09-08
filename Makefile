@@ -28,3 +28,6 @@ $(uninstall-dirs): uninstall-%:
 
 $(clean-dirs): clean-%:
 	$(MAKE) -C $*/ clean
+
+check:
+	./env guile --no-auto-compile tests/command.scm
