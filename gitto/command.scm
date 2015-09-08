@@ -48,7 +48,7 @@
 
 (define (command? name)
   "Check if NAME corresponds to a command."
-  (not (null? (assoc-ref command-list name))))
+  (and (assoc-ref command-list name) #t))
 
 (define (command-documentation command)
   "Get the documentation for COMMAND."
