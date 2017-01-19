@@ -182,30 +182,38 @@ Don't do anything if REPO has been added to `config-exclusion-list'."
         (map-in-order (lambda (repo) (make <repository> repo)) result))
       '()))
 
-(define-command (add repository)
-  "Register a repository."
-  "Usage: gitto add REPO
-
-Add REPO to the registered repository list. This command will fail if
-REPO does not indicate a git repository or if it has already been
-registered."
-  (set! repository (make <repository> (realpath repository)))
+(define (register-repository repository)
   (if (not (known? repository))
       (begin
         (set! repositories (append `(,repository) repositories))
         (save-repositories-list)
         (simple-format #t "Repository ~A registered.~%"
                        (repo-name repository))
+        repository)
+      (begin
+        (simple-format #t "Repository ~A already registered.~%"
+                       (repo-name repository))
+        #f)))
 
-        ;; Ask the user if they would like to merge their config
-        ;; template with the newly registered repository if they have
-        ;; a configuration set-up and the current input port is a tty.
-        (when (and (isatty? (current-input-port))
-                   (not (eq? global-config '()))
-                   (y-or-n? "Would you like to merge your settings?"
-                            #:default #t))
-          (update-repo-config repository)))
-      (display "Repository already registered."))
+(define-command (add . repos)
+  "Register any number of repositories."
+  "Usage: gitto add REPO...
+
+Add each REPO to the registered repository list. This command will
+fail if REPO does not indicate a git repository or if it has already
+been registered."
+  (let* ((repositories
+          (map (lambda (repo) (make <repository> (realpath repo))) repos))
+         (added (delq #f (map register-repository repositories))))
+    ;; Ask the user if they would like to merge their config
+    ;; template with the newly registered repository if they have
+    ;; a configuration set-up and the current input port is a tty.
+    (when (and (not (eq? added '()))
+               (isatty? (current-input-port))
+               (not (eq? global-config '()))
+               (y-or-n? "Would you like to merge your settings?"
+                        #:default #t))
+      (for-each update-repo-config added)))
   (newline))
 
 (define-command (check repository)

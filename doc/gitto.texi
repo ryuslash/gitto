@@ -179,10 +179,10 @@ make install DESTDIR=/path/to/where/you/want/it
 In order to use gitto you should first register some repositories. To
 register a repository you can use the @command{add} command.
 
-@deffn Command add location
-This command checks if @var{location} contains a @file{.git} directory,
-which indicates it being a git repository, and registers @var{location}
-if so. Example:
+@deffn Command add location...
+This command checks if each @var{location} contains a @file{.git}
+directory, which indicates it being a git repository, and registers
+each @var{location} if so. Example:
 
 @example
 gitto add /path/to/your/project
